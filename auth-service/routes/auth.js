@@ -79,7 +79,7 @@ router.post('/forgot-password', async (req, res) => {
 
 // Verify OTP
 router.post('/verify-otp', async (req, res) => {
-    const { otp } = req.body;
+    const { email, otp } = req.body;
     try {
         const user = await User.findOne({ email });
 
