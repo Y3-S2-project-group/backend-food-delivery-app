@@ -1,15 +1,12 @@
-const express = require('express');
+import express from 'express';
+import { createMenuItem, getMenuItems, getMenuItemById, updateMenuItem, deleteMenuItem } from '../controllers/menuController.js';
+
 const router = express.Router();
-const auth = require('../middleware/authMiddleware');
-const { addMenuItem, getMenuItems, updateMenuItem, deleteMenuItem, } = require('../controllers/menuController');
 
-// Simulated authentication middleware
-router.use(auth);
-
-// Menu routes
-router.post('/', addMenuItem);
-router.get('/', getMenuItems);
+router.post('/', createMenuItem);
+router.get('/menu/:restaurantId', getMenuItems);
+router.get('/:id', getMenuItemById);
 router.put('/:id', updateMenuItem);
 router.delete('/:id', deleteMenuItem);
 
-module.exports = router;
+export default router;
