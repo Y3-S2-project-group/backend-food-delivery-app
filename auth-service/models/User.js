@@ -6,11 +6,23 @@ const UserSchema = new mongoose.Schema({
   password: String,
   role: {
     type: String,
-    enum: ["customer", "restaurant", "delivery"],
+    enum: ["customer", "delivery-person", "admin", "restaurant"],
     default: "customer",
   },
   otp: String,
   otpExpires: Date,
+  latitude: {
+    type: Number,
+    required: function () {
+      return this.role === "delivery";
+    },
+  },
+  longitude: {
+    type: Number,
+    required: function () {
+      return this.role === "delivery";
+    },
+  },
 });
 
 export default mongoose.model("User", UserSchema);
