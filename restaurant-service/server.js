@@ -1,16 +1,34 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const connectDB = require('./config/db');
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import connectDB from './config/db.js';
+import restaurantRoutes from './routes/restaurantRoutes.js';
+import menuRoutes from './routes/menuRoutes.js';
 
 dotenv.config();
 connectDB();
 
 const app = express();
+
+// Middleware
 app.use(express.json());
 
-app.use('/api/restaurants', require('./routes/restaurantRoutes'));
-app.use('/api/menus', require('./routes/menuRoutes'));
+// CORS setup for local development (frontend running on Vite - localhost:5173)
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+}));
 
-app.listen(process.env.PORT, () => {
+// Routes
+app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/menus', menuRoutes);
+
+// Root route
+app.get('/', (req, res) => {
+  res.send('Welcome to the Restaurant Service API!');
+});
+
+// Listen on 0.0.0.0 for Docker compatibility
+app.listen(process.env.PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${process.env.PORT}`);
 });
