@@ -6,7 +6,7 @@ const UserSchema = new mongoose.Schema({
   password: String,
   role: {
     type: String,
-    enum: ["customer", "delivery"],
+    enum: ["customer", "delivery-person", "admin", "restaurant"],
     default: "customer",
   },
   otp: String,
