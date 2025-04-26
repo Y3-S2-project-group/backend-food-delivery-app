@@ -1,6 +1,8 @@
+import mongoose from 'mongoose';
 import MenuItem from '../models/MenuItem.js';
+import Restaurant from '../models/Restaurant.js';
 
-// Create menu item
+// Create menu item (only for restaurant owners)
 export const createMenuItem = async (req, res) => {
   try {
     const {
@@ -13,6 +15,19 @@ export const createMenuItem = async (req, res) => {
       preparationTimeInMin,
       tags,
     } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
+      return res.status(400).json({ message: 'Invalid restaurantId' });
+    }
+
+    const restaurant = await Restaurant.findOne({
+      _id: restaurantId,
+      ownerId: req.user.id,
+    });
+
+    if (!restaurant) {
+      return res.status(403).json({ message: 'Not authorized or restaurant not found' });
+    }
 
     const menuItem = new MenuItem({
       restaurantId,
@@ -32,61 +47,94 @@ export const createMenuItem = async (req, res) => {
   }
 };
 
-// Get all menu items for a restaurant
+// Get all menu items for a restaurant (owner-only)
 export const getMenuItems = async (req, res) => {
   try {
     const { restaurantId } = req.params;
-    
-    // Ensure restaurantId is a valid ObjectId
+
     if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
       return res.status(400).json({ message: 'Invalid restaurantId' });
     }
 
-    const items = await MenuItem.find({ restaurantId: mongoose.Types.ObjectId(restaurantId) });
-    
-    if (!items.length) {
-      return res.status(404).json({ message: 'No menu items found for this restaurant' });
+    const restaurant = await Restaurant.findOne({
+      _id: restaurantId,
+      ownerId: req.user.id,
+    });
+
+    if (!restaurant) {
+      return res.status(403).json({ message: 'Not authorized or restaurant not found' });
     }
-    
+
+    const items = await MenuItem.find({ restaurantId });
     res.json(items);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Get single menu item by ID
+// Get single menu item by ID (owner-only)
 export const getMenuItemById = async (req, res) => {
   try {
-    const item = await MenuItem.findById(req.params.id);
-    if (!item) return res.status(404).json({ message: 'Menu item not found' });
-    res.json(item);
+    const menuItem = await MenuItem.findById(req.params.id);
+    if (!menuItem) return res.status(404).json({ message: 'Menu item not found' });
+
+    const restaurant = await Restaurant.findOne({
+      _id: menuItem.restaurantId,
+      ownerId: req.user.id,
+    });
+
+    if (!restaurant) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    res.json(menuItem);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Update menu item
+// Update menu item (owner-only)
 export const updateMenuItem = async (req, res) => {
   try {
-    const updatedItem = await MenuItem.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
+    const menuItem = await MenuItem.findById(req.params.id);
+    if (!menuItem) return res.status(404).json({ message: 'Menu item not found' });
+
+    const restaurant = await Restaurant.findOne({
+      _id: menuItem.restaurantId,
+      ownerId: req.user.id,
     });
-    if (!updatedItem) return res.status(404).json({ message: 'Menu item not found' });
+
+    if (!restaurant) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    Object.assign(menuItem, req.body);
+    const updatedItem = await menuItem.save();
+
     res.json(updatedItem);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Delete menu item
+// Delete menu item (owner-only)
 export const deleteMenuItem = async (req, res) => {
   try {
-    const deletedItem = await MenuItem.findByIdAndDelete(req.params.id);
-    if (!deletedItem) return res.status(404).json({ message: 'Menu item not found' });
+    const menuItem = await MenuItem.findById(req.params.id);
+    if (!menuItem) return res.status(404).json({ message: 'Menu item not found' });
+
+    const restaurant = await Restaurant.findOne({
+      _id: menuItem.restaurantId,
+      ownerId: req.user.id,
+    });
+
+    if (!restaurant) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    await menuItem.deleteOne();
     res.json({ message: 'Menu item deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-

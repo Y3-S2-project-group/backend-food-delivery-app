@@ -1,19 +1,27 @@
 import express from 'express';
 import { createRestaurant, getMyRestaurants, getRestaurantById, updateRestaurant, deleteRestaurant, updateRestaurantStatus, getPendingRestaurants } from '../controllers/restaurantController.js';
-import authenticateToken from '../middleware/authMiddleware.js';
+import {authenticateToken, checkRole} from '../middleware/authMiddleware.js';
 
 
 const router = express.Router();
 
 
-router.post('/', authenticateToken, createRestaurant);
-router.get('/pending', getPendingRestaurants); // Admin access (still authenticated, maybe add role check)
-router.get('/', authenticateToken, getMyRestaurants);
-router.get('/:id', authenticateToken, getRestaurantById);
-router.put('/:id', authenticateToken, updateRestaurant);
-router.delete('/:id', authenticateToken, deleteRestaurant);
+// Only authenticated users can create a restaurant (e.g., restaurant manager)
+router.post('/', authenticateToken, checkRole('restaurant'), createRestaurant);
 
-router.patch('/:id/verify', updateRestaurantStatus); // Admin access (still authenticated, maybe add role check)
+// Only admin can view all pending restaurant approvals
+router.get('/pending', authenticateToken, checkRole('admin'), getPendingRestaurants);
+
+// Only the logged-in restaurant manager can view their own restaurants
+router.get('/', authenticateToken, checkRole('restaurant'), getMyRestaurants);
+
+// Authenticated restaurant user can get/update/delete their restaurant by ID
+router.get('/:id', authenticateToken, checkRole('restaurant'), getRestaurantById);
+router.put('/:id', authenticateToken, checkRole('restaurant'), updateRestaurant);
+router.delete('/:id', authenticateToken, checkRole('restaurant'), deleteRestaurant);
+
+// Only admin can verify/approve a restaurant
+router.patch('/:id/verify', authenticateToken, checkRole('admin'), updateRestaurantStatus);
 
 
 

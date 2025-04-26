@@ -3,7 +3,18 @@ import Restaurant from '../models/Restaurant.js';
 // Create a new restaurant
 export const createRestaurant = async (req, res) => {
   try {
-    const { name, description, address, contactNumber, email } = req.body;
+    const {
+      name,
+      description,
+      address,      // { street, city }
+      contactNumber,
+      email,
+      coordinates   // [longitude, latitude]
+    } = req.body;
+
+    if (!coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
+      return res.status(400).json({ message: 'Invalid coordinates. Provide [longitude, latitude]' });
+    }
 
     const newRestaurant = new Restaurant({
       name,
@@ -12,6 +23,10 @@ export const createRestaurant = async (req, res) => {
       contactNumber,
       email,
       ownerId: req.user.id,
+      location: {
+        type: 'Point',
+        coordinates
+      },
     });
 
     const savedRestaurant = await newRestaurant.save();
@@ -49,9 +64,23 @@ export const getRestaurantById = async (req, res) => {
 // Update a specific restaurant (owner-only)
 export const updateRestaurant = async (req, res) => {
   try {
+    const updateData = { ...req.body };
+
+    // Handle location update if coordinates provided
+    if (req.body.coordinates) {
+      const coords = req.body.coordinates;
+      if (!Array.isArray(coords) || coords.length !== 2) {
+        return res.status(400).json({ message: 'Invalid coordinates. Provide [longitude, latitude]' });
+      }
+      updateData.location = {
+        type: 'Point',
+        coordinates: coords,
+      };
+    }
+
     const restaurant = await Restaurant.findOneAndUpdate(
       { _id: req.params.id, ownerId: req.user.id },
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     );
 
@@ -77,11 +106,9 @@ export const deleteRestaurant = async (req, res) => {
   }
 };
 
-
-// Get all pending restaurant requests
+// Get all pending restaurant requests (for Admin)
 export const getPendingRestaurants = async (req, res) => {
   try {
-    // Correctly filter by the 'status' field instead of '_id'
     const pendingRestaurants = await Restaurant.find({ status: 'pending' });
     res.json(pendingRestaurants);
   } catch (error) {
@@ -89,16 +116,15 @@ export const getPendingRestaurants = async (req, res) => {
   }
 };
 
-
-// For Admin Service to approve a restaurant
+// Admin updates restaurant status (approve/reject)
 export const updateRestaurantStatus = async (req, res) => {
   try {
-    const { status } = req.body;  // 'approved' or 'rejected'
+    const { status } = req.body;
     const restaurant = await Restaurant.findById(req.params.id);
 
     if (!restaurant) return res.status(404).json({ message: 'Restaurant not found' });
 
-    if (status !== 'approved' && status !== 'rejected') {
+    if (!['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status. Must be "approved" or "rejected".' });
     }
 
