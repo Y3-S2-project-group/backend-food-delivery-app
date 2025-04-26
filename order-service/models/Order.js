@@ -12,7 +12,11 @@ const OrderItemSchema = new Schema({
   
   // Define Order
 const OrderSchema = new Schema({
-    customerId: { type: String, required: true },
+    customerId:  {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
     restaurantId: { type: String, required: true },
     items: [OrderItemSchema],
     status: {
