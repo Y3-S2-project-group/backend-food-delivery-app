@@ -25,12 +25,22 @@ const OrderSchema = new Schema({
       default: 'DRAFT'
     },
     totalAmount: { type: Number, required: true },
-    address: {
+    customerInfo: {
       street: String,
       city: String,
-      zipCode: String,
-      additionalInfo: String,
       contactNumber: Number,
+    },
+    customerLocation: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        required: true,
+        default: 'Point'
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: true
+      }
     },
     paymentStatus: {
       type: String,
@@ -48,5 +58,7 @@ const OrderSchema = new Schema({
     this.updatedAt = Date.now();
     next();
   });
+
+  OrderSchema.index({ customerLocation: '2dsphere' });
   
   export default mongoose.model('Order', OrderSchema);
