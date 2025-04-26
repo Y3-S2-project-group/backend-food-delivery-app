@@ -26,7 +26,7 @@ const UserSchema = new mongoose.Schema({
         return this.role === "delivery-person";
       },
     },
-  },
+  }
 });
 
 // Create a 2dsphere index for location
