@@ -30,5 +30,5 @@ app.get('/', (req, res) => {
 
 // Listen on 0.0.0.0 for Docker compatibility
 app.listen(process.env.PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${process.env.PORT}`);
+  console.log(`Restaurant Service running on port ${process.env.PORT}`);
 });
