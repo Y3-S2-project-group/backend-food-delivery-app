@@ -11,18 +11,25 @@ const UserSchema = new mongoose.Schema({
   },
   otp: String,
   otpExpires: Date,
-  latitude: {
-    type: Number,
-    required: function () {
-      return this.role === "delivery";
+  location: {
+    type: {
+      type: String,
+      enum: ["Point"],
+      default: "Point",
+      required: function () {
+        return this.role === "delivery-person";
+      },
     },
-  },
-  longitude: {
-    type: Number,
-    required: function () {
-      return this.role === "delivery";
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      required: function () {
+        return this.role === "delivery-person";
+      },
     },
   },
 });
+
+// Create a 2dsphere index for location
+UserSchema.index({ location: "2dsphere" });
 
 export default mongoose.model("User", UserSchema);
