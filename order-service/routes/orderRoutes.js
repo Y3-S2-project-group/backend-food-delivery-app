@@ -9,23 +9,61 @@ import {
   getOrdersReadyForDelivery
 
 } from "../controllers/orderController.js";
+import { authenticateToken, authorizeRole, isOrderOwner } from "../middleware/authMiddleware.js";
 
+
+// Create router instance
 const router = express.Router();
 
-router.post("/orders", placeOrder); //this is the POST request to place an order
+// Customer-only routes
+router.post("/orders", 
+  authenticateToken, 
+  authorizeRole(['customer']), 
+  placeOrder
+);
 
-router.put("/orders/:id", modifyOrder); //this is the PUT request to modify an order
+router.put("/orders/:id", 
+  authenticateToken, 
+  authorizeRole(['customer']), 
+  isOrderOwner, 
+  modifyOrder
+);
 
-router.patch("/orders/:id/confirm", confirmOrder); //THIS IS THE PATCH REQUEST TO CONFIRM AN ORDER
+router.patch("/orders/:id/confirm", 
+  authenticateToken, 
+  authorizeRole(['customer']), 
+  isOrderOwner, 
+  confirmOrder
+);
 
-router.get("/orders/:id/status", getOrderStatus); // this is the GET request to get the order status
+// Both customer and restaurant can check order status
+router.get("/orders/:id/status", 
+  authenticateToken, 
+  authorizeRole(['customer', 'restaurant']), 
+  isOrderOwner, 
+  getOrderStatus
+);
 
-router.patch("/orders/:id/status", updateOrderStatus); // this is the PATCH request to update the order status
+// Restaurant-only routes
+router.patch("/orders/:id/status", 
+  authenticateToken, 
+  authorizeRole(['restaurant']), 
+  isOrderOwner, 
+  updateOrderStatus
+);
 
-router.patch("/orders/:id/placed", updatePlacedOrder); // this is the PATCH request to update the order status to placed
+router.patch("/orders/:id/placed", 
+  authenticateToken, 
+  authorizeRole(['restaurant']), 
+  isOrderOwner, 
+  updatePlacedOrder
+);
 
-router.get("/orders/ready-for-delivery", getOrdersReadyForDelivery); //this is the GET request to get all orders ready for delivery
-
+router.get("/orders/ready-for-delivery", 
+  authenticateToken, 
+  authorizeRole(['restaurant', 'delivery']), 
+  getOrdersReadyForDelivery
+);
 
 
 export default router;
