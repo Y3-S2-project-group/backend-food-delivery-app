@@ -1,7 +1,7 @@
 // controllers/orderController.js
 import Order from "../models/Order.js";
 
-// 🚀1. Place a new order
+// 1.  Place a new order
 export const placeOrder = async (req, res) => {
   try {
     // Check if req.body exists
@@ -15,7 +15,8 @@ export const placeOrder = async (req, res) => {
     const { 
       restaurantId, 
       items, 
-      address, 
+      customerInfo,
+      customerLocation,
       totalAmount,
       status 
     } = req.body;
@@ -64,7 +65,8 @@ export const placeOrder = async (req, res) => {
       items,
       totalAmount: calculatedTotal,
       status: orderStatus,
-      address: address || {},
+      customerInfo: customerInfo || {},
+      customerLocation,
       paymentStatus: 'PENDING'
     });
 
@@ -88,7 +90,7 @@ export const placeOrder = async (req, res) => {
   }
 };
 
-// 🚀2. Modify an order (only if status is DRAFT)
+// 2. Modify an order (only if status is DRAFT)
 export const modifyOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
@@ -141,7 +143,7 @@ export const modifyOrder = async (req, res) => {
   }
 };
 
-// 🚀3. Confirm an order
+// 3. Confirm an order
 export const confirmOrder = async (req, res) => {
   try {
     // We can use req.order from isOrderOwner middleware
@@ -173,7 +175,7 @@ export const confirmOrder = async (req, res) => {
   }
 };
 
-//🚀 4. Update order status (after CONFIRMED)
+//4. Update order status (after CONFIRMED)
 export const updateOrderStatus = async (req, res) => {
   try {
     console.log('Incoming request to update order status');
@@ -228,7 +230,7 @@ export const updateOrderStatus = async (req, res) => {
       data: updatedOrder
     });
   } catch (error) {
-    console.error('🔥 Error updating order status:', error);
+    console.error('Error updating order status:', error);
     return res.status(500).json({
       success: false,
       message: 'An error occurred while updating the order status',
@@ -237,7 +239,7 @@ export const updateOrderStatus = async (req, res) => {
   }
 };
 
-//🚀 5. Update order in PLACED status
+// 5. Update order in PLACED status
 export const updatePlacedOrder = async (req, res) => {
   try {
     const { status } = req.body;
@@ -288,7 +290,7 @@ export const updatePlacedOrder = async (req, res) => {
   }
 };
 
-// 🚀6. Get order status
+// 6. Get order status
 export const getOrderStatus = async (req, res) => {
   try {
     // We can use req.order from isOrderOwner middleware
@@ -321,7 +323,8 @@ export const getOrderStatus = async (req, res) => {
   }
 };
 
-// 🚀7. Get orders ready for delivery
+
+// 7. Get orders ready for delivery (simplified)
 export const getOrdersReadyForDelivery = async (req, res) => {
   try {
     let query = { status: 'READY_FOR_DELIVERY' };
@@ -347,14 +350,13 @@ export const getOrdersReadyForDelivery = async (req, res) => {
     const deliveryOrders = readyOrders.map(order => ({
       orderId: order._id,
       restaurantId: order.restaurantId,
-      // Only essential customer details and address
-      address: {
-        street: order.address.street,
-        city: order.address.city,
-        contactNumber: order.address.contactNumber,
-        zipCode: order.address.zipCode,
-        additionalInfo: order.address.additionalInfo
+      // Only essential customer details and customerInfo
+      customerInfo: {
+        street: order.customerInfo.street,
+        city: order.customerInfo.city,
+        contactNumber: order.customerInfo.contactNumber,
       },
+      customerLocation: order.customerLocation.coordinates,
       // Simplified items info
       totalItems: order.items.length,
       totalAmount: order.totalAmount,
