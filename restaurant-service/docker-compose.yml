@@ -1,0 +1,15 @@
+# For local dev with MongoDB
+version: '3.8'
+services:
+  restaurant-service:
+    build: .
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"

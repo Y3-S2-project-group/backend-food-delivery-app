@@ -12,7 +12,11 @@ const OrderItemSchema = new Schema({
   
   // Define Order
 const OrderSchema = new Schema({
-    customerId: { type: String, required: true },
+    customerId:  {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
     restaurantId: { type: String, required: true },
     items: [OrderItemSchema],
     status: {
@@ -21,12 +25,22 @@ const OrderSchema = new Schema({
       default: 'DRAFT'
     },
     totalAmount: { type: Number, required: true },
-    address: {
+    customerInfo: {
       street: String,
       city: String,
-      zipCode: String,
-      additionalInfo: String,
       contactNumber: Number,
+    },
+    customerLocation: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        required: true,
+        default: 'Point'
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: true
+      }
     },
     paymentStatus: {
       type: String,
@@ -44,5 +58,7 @@ const OrderSchema = new Schema({
     this.updatedAt = Date.now();
     next();
   });
+
+  OrderSchema.index({ customerLocation: '2dsphere' });
   
   export default mongoose.model('Order', OrderSchema);

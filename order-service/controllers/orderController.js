@@ -1,7 +1,7 @@
-import { Zap, ZapIcon } from "lucide-react";
+// controllers/orderController.js
 import Order from "../models/Order.js";
 
-// 🚀1.  Place a new order
+// 1.  Place a new order
 export const placeOrder = async (req, res) => {
   try {
     // Check if req.body exists
@@ -13,19 +13,22 @@ export const placeOrder = async (req, res) => {
     }
     
     const { 
-      customerId, 
       restaurantId, 
       items, 
-      address, 
+      customerInfo,
+      customerLocation,
       totalAmount,
       status 
     } = req.body;
 
+    // Get customerId from authenticated user
+    const customerId = req.user.id;
+
     // Validation
-    if (!customerId || !restaurantId || !items || !Array.isArray(items) || items.length === 0) {
+    if (!restaurantId || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Missing required fields: customerId, restaurantId, and items array' 
+        message: 'Missing required fields: restaurantId and items array' 
       });
     }
 
@@ -45,7 +48,6 @@ export const placeOrder = async (req, res) => {
       calculatedTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     }
 
-
     if (status && status !== 'DRAFT' && status !== 'CONFIRMED') {
       return res.status(400).json({
         success: false,
@@ -63,7 +65,8 @@ export const placeOrder = async (req, res) => {
       items,
       totalAmount: calculatedTotal,
       status: orderStatus,
-      address: address || {},
+      customerInfo: customerInfo || {},
+      customerLocation,
       paymentStatus: 'PENDING'
     });
 
@@ -87,26 +90,21 @@ export const placeOrder = async (req, res) => {
   }
 };
 
-// 🚀2. Modify an order (only if status is DRAFT)
+// 2. Modify an order (only if status is DRAFT)
 export const modifyOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
     const updates = req.body;
     const { status, cancellationReason } = updates;
 
-    const order = await Order.findById(orderId);
-    if (!order) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Order not found" 
-      });
-    }
-
+    // We can use req.order from isOrderOwner middleware
+    const order = req.order;
+    
     // Only DRAFT orders can be modified
     if (order.status !== "DRAFT") {
       return res.status(400).json({ 
         success: false,
-        message: "Order cannot be modified after it's confirmed Or cancelled" 
+        message: "Order cannot be modified after it's confirmed or cancelled" 
       });
     }
 
@@ -145,18 +143,11 @@ export const modifyOrder = async (req, res) => {
   }
 };
 
-// 🚀3. Confirm an order
+// 3. Confirm an order
 export const confirmOrder = async (req, res) => {
   try {
-    const orderId = req.params.id;
-
-    const order = await Order.findById(orderId);
-    if (!order) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Order not found" 
-      });
-    }
+    // We can use req.order from isOrderOwner middleware
+    const order = req.order;
 
     if (order.status !== "DRAFT") {
       return res.status(400).json({ 
@@ -184,39 +175,18 @@ export const confirmOrder = async (req, res) => {
   }
 };
 
-//🚀 4. Update order status (after CONFIRMED)
+//4. Update order status (after CONFIRMED)
 export const updateOrderStatus = async (req, res) => {
   try {
     console.log('Incoming request to update order status');
-    console.log('req.params:', req.params);
-    console.log('req.body:', req.body);
-
-    const { id } = req.params;
+    
     const { status, cancellationReason } = req.body;
-
-    // Check if id is present
-    if (!id) {
-      console.warn('Missing id in req.params');
-      return res.status(400).json({
-        success: false,
-        message: 'Order ID is required'
-      });
-    }
-
-    // Find the order
-    const order = await Order.findById(id);
-
-    if (!order) {
-      console.warn(`Order with ID ${id} not found`);
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found'
-      });
-    }
+    
+    // We can use req.order from isOrderOwner middleware
+    const order = req.order;
 
     // Only CONFIRMED orders can proceed to next statuses
     if (order.status !== 'CONFIRMED') {
-      console.warn(`Invalid current status: ${order.status}`);
       return res.status(400).json({
         success: false,
         message: 'Only orders with CONFIRMED status can be updated'
@@ -252,7 +222,7 @@ export const updateOrderStatus = async (req, res) => {
 
     const updatedOrder = await order.save();
 
-    console.log(`Order ${id} status updated to ${status}`);
+    console.log(`Order ${order._id} status updated to ${status}`);
 
     return res.status(200).json({
       success: true,
@@ -260,7 +230,7 @@ export const updateOrderStatus = async (req, res) => {
       data: updatedOrder
     });
   } catch (error) {
-    console.error('🔥 Error updating order status:', error);
+    console.error('Error updating order status:', error);
     return res.status(500).json({
       success: false,
       message: 'An error occurred while updating the order status',
@@ -269,19 +239,13 @@ export const updateOrderStatus = async (req, res) => {
   }
 };
 
-//🚀 5. Update order in PLACED status
+// 5. Update order in PLACED status
 export const updatePlacedOrder = async (req, res) => {
   try {
-    const { id } = req.params;
     const { status } = req.body;
-
-    const order = await Order.findById(id);
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found'
-      });
-    }
+    
+    // We can use req.order from isOrderOwner middleware
+    const order = req.order;
 
     // Check if the order is in a status that can be updated
     if (order.status !== 'PLACED' && order.status !== 'PREPARING') {
@@ -326,17 +290,11 @@ export const updatePlacedOrder = async (req, res) => {
   }
 };
 
-
-// 🚀6. Get order status
+// 6. Get order status
 export const getOrderStatus = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Order not found" 
-      });
-    }
+    // We can use req.order from isOrderOwner middleware
+    const order = req.order;
 
     // Include cancellation reason if order is cancelled
     const responseData = {
@@ -366,13 +324,18 @@ export const getOrderStatus = async (req, res) => {
 };
 
 
-// 🚀7. Get orders ready for delivery (simplified)
+// 7. Get orders ready for delivery (simplified)
 export const getOrdersReadyForDelivery = async (req, res) => {
   try {
+    let query = { status: 'READY_FOR_DELIVERY' };
+    
+    // If user is a restaurant, only show their orders
+    if (req.user.role === 'restaurant') {
+      query.restaurantId = req.user.id;
+    }
+    
     // Find all orders with status READY_FOR_DELIVERY
-    const readyOrders = await Order.find({ 
-      status: 'READY_FOR_DELIVERY' 
-    });
+    const readyOrders = await Order.find(query);
     
     if (readyOrders.length === 0) {
       return res.status(200).json({
@@ -387,14 +350,13 @@ export const getOrdersReadyForDelivery = async (req, res) => {
     const deliveryOrders = readyOrders.map(order => ({
       orderId: order._id,
       restaurantId: order.restaurantId,
-      // Only essential customer details and address
-      address: {
-        street: order.address.street,
-        city: order.address.city,
-        contactNumber: order.address.contactNumber,
-        Zipcode: order.address.zipCode,
-        additionalInfo: order.address.additionalInfo
+      // Only essential customer details and customerInfo
+      customerInfo: {
+        street: order.customerInfo.street,
+        city: order.customerInfo.city,
+        contactNumber: order.customerInfo.contactNumber,
       },
+      customerLocation: order.customerLocation.coordinates,
       // Simplified items info
       totalItems: order.items.length,
       totalAmount: order.totalAmount,
