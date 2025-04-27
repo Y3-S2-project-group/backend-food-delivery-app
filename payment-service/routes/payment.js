@@ -1,19 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const Stripe = require('stripe');
-const dotenv = require('dotenv');
 
-dotenv.config();
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('STRIPE_SECRET_KEY is missing in environment variables');
+}
+
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 // POST /api/payments
 router.post('/', async (req, res) => {
   const { orderId, amount } = req.body;
 
+  if (!orderId || !amount) {
+    return res.status(400).json({ message: 'OrderId and Amount are required' });
+  }
+
   try {
-    // Create a PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount * 100, // Stripe accepts amounts in cents
+      amount: amount * 100, // Stripe expects amount in cents
       currency: 'usd',
       metadata: { orderId },
     });
@@ -28,6 +33,7 @@ router.post('/', async (req, res) => {
       message: 'Payment initiated successfully',
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Payment failed', error: error.message });
   }
 });

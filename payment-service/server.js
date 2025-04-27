@@ -1,14 +1,14 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const cors = require('cors');
+dotenv.config();
+
 
 const paymentRoutes = require('./routes/payment');
+const cors = require('cors');
 
 const app = express();
 app.use(express.json());
-
 app.use(cors());
-dotenv.config();
 
 app.use('/api/payments', paymentRoutes);
 
