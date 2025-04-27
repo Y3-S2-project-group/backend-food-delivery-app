@@ -50,8 +50,7 @@ export const getMyRestaurants = async (req, res) => {
 export const getRestaurantById = async (req, res) => {
   try {
     const restaurant = await Restaurant.findOne({
-      _id: req.params.id,
-      ownerId: req.user.id,
+      _id: req.params.id
     });
 
     if (!restaurant) return res.status(404).json({ message: 'Restaurant not found' });
