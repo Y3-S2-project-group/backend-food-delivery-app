@@ -136,3 +136,14 @@ export const updateRestaurantStatus = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Get all approved restaurants
+export const getApprovedRestaurants = async (req, res) => {
+  try {
+    const approvedRestaurants = await Restaurant.find({ status: 'approved' });
+    res.json(approvedRestaurants);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+

@@ -6,26 +6,27 @@ import {
   getMenuItemById,
   updateMenuItem,
   deleteMenuItem,
+  getPublicMenuItems, 
 } from '../controllers/menuController.js';
 
 const router = express.Router();
 
-// Protect all menu routes with authentication middleware
-router.use(authenticateToken);
+// ✅ Public route - Customers can view menu items without authentication
+router.get('/public/restaurant/:restaurantId', getPublicMenuItems);
 
-// Create a menu item (only for owner's restaurants)
-router.post('/', createMenuItem);
+// 🔒 Protected route - Owners can view their restaurant menu items
+router.get('/restaurant/:restaurantId', authenticateToken, getMenuItems);
 
-// Get all menu items for a specific restaurant
-router.get('/restaurant/:restaurantId', getMenuItems);
+// 🔒 Protected route - Owners can create menu item
+router.post('/', authenticateToken, createMenuItem);
 
-// Get a specific menu item by ID
-router.get('/:id', getMenuItemById);
+// 🔒 Protected route - Owners can update menu item
+router.put('/:id', authenticateToken, updateMenuItem);
 
-// Update a specific menu item
-router.put('/:id', updateMenuItem);
+// 🔒 Protected route - Owners can delete menu item
+router.delete('/:id', authenticateToken, deleteMenuItem);
 
-// Delete a specific menu item
-router.delete('/:id', deleteMenuItem);
+// 🔒 Protected route - Owners can get single menu item by ID
+router.get('/:id', authenticateToken, getMenuItemById);
 
 export default router;

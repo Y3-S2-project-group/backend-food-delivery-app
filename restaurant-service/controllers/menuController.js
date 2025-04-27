@@ -138,3 +138,26 @@ export const deleteMenuItem = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+// Get all menu items for a restaurant (public / customer access)
+export const getPublicMenuItems = async (req, res) => {
+  try {
+    const { restaurantId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
+      return res.status(400).json({ message: 'Invalid restaurantId' });
+    }
+
+    const restaurant = await Restaurant.findById(restaurantId);
+
+    if (!restaurant || restaurant.status !== 'approved') {
+      return res.status(404).json({ message: 'Restaurant not found or not approved yet' });
+    }
+
+    const items = await MenuItem.find({ restaurantId, isAvailable: true }); // Only available items
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
