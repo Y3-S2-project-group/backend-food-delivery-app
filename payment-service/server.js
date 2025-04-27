@@ -4,6 +4,10 @@ const cors = require('cors');
 
 const paymentRoutes = require('./routes/payment');
 
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+console.log(stripe);
+console.log('Stripe Secret Key:', process.env.STRIPE_SECRET_KEY);
+
 const app = express();
 app.use(express.json());
 
