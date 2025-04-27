@@ -24,6 +24,11 @@ builder.Services.AddHttpClient("OrderService", client =>
     client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:OrderService"] ?? "http://localhost:5001");
 });
 
+builder.Services.AddHttpClient("RestaurantService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:RestaurantService"] ?? "http://localhost:5001");
+});
+
 
 builder.Services.Configure<DatabaseSettings>(
     builder.Configuration.GetSection("DatabaseSettings"));

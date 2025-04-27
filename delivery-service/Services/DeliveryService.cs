@@ -27,22 +27,42 @@ namespace delivery_service.Services
             try
             {
 
-                // Get customer coordinates
-                var customerLongitude = orderReady.CustomerLocation[0];
-                var customerLatitude = orderReady.CustomerLocation[1];
+                // Get restaurant coordinates from restaurant service using restaurant ID
+                var restaurantHttpClient = _httpClientFactory.CreateClient("RestaurantService");
+                var restaurantResponse = await restaurantHttpClient.GetAsync($"/api/restaurants/{orderReady.RestaurantId}");
+                
+                if (!restaurantResponse.IsSuccessStatusCode)
+                {
+                    return null;
+                }
+                
+                var restaurantData = await restaurantResponse.Content.ReadFromJsonAsync<RestaurantResponseDTO>();
+                
+                if (restaurantData == null || 
+                    restaurantData.Location == null || 
+                    restaurantData.Location.Coordinates == null || 
+                    restaurantData.Location.Coordinates.Length < 2)
+                {
+                    return null;
+                }
+                
+                // Use restaurant coordinates instead of customer coordinates
+                var restaurantLongitude = restaurantData.Location.Coordinates[0];
+                var restaurantLatitude = restaurantData.Location.Coordinates[1];
 
                 // Find nearest available driver using auth service
                 var httpClient = _httpClientFactory.CreateClient("AuthService");
                 var response = await httpClient.GetAsync(
-                    $"/api/users/drivers/nearest?longitude={customerLongitude}&latitude={customerLatitude}");
+                    $"/api/users/drivers/nearest?longitude={restaurantLongitude}&latitude={restaurantLatitude}");
 
                 if (!response.IsSuccessStatusCode)
                 {
                     return null;
                 }
 
+                // Find and modify just these lines in your AssignDeliveryAsync method
                 var driverResponse = await response.Content.ReadFromJsonAsync<DriverResponseDTO>();
-                var driver = driverResponse?.Data;
+                var driver = driverResponse?.Data?.FirstOrDefault();
 
                 if (driver == null)
                 {
