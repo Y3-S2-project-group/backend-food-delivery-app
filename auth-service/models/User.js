@@ -10,23 +10,7 @@ const UserSchema = new mongoose.Schema({
     default: "customer",
   },
   otp: String,
-  otpExpires: Date,
-  location: {
-    type: {
-      type: String,
-      enum: ["Point"],
-      default: "Point",
-      required: function () {
-        return this.role === "delivery-person";
-      },
-    },
-    coordinates: {
-      type: [Number], // [longitude, latitude]
-      required: function () {
-        return this.role === "delivery-person";
-      },
-    },
-  }
+  otpExpires: Date
 });
 
 // Create a 2dsphere index for location
