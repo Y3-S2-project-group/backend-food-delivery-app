@@ -69,7 +69,7 @@ router.get("/orders/ready-for-delivery",
 
 // Delete order
 // Get user orders
-router.get("/orders", 
+router.get("/orders/user", 
   authenticateToken, 
   authorizeRole(['customer']), 
   getUserOrders

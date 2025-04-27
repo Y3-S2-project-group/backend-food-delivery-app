@@ -439,7 +439,7 @@ export const getUserOrders = async (req, res) => {
 // 🚀 Delete an order (only if status is DRAFT)
 export const deleteOrder = async (req, res) => {
   try {
-    const orderId = req.params.id || req.params.orderId;
+    const orderId = req.params.orderId;
     const userId = req.user.id;
     
     if (!orderId) {
