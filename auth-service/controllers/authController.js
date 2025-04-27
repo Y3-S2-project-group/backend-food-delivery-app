@@ -1,40 +1,30 @@
-import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
-import dotenv from 'dotenv';
+import User from "../models/User.js";
 
-import transporter from '../utils/email.js';
-
-dotenv.config();
-
-const router = express.Router();
-
-// Register
-router.post('/register', async (req, res) => {
+export const register = async (req, res) => {
     const { name, email, password, role } = req.body;
-console.log(req.body);
-    try {
-        const existing = await User.findOne({ email });
-        if (existing) return res.status(400).json({ msg: 'User already exists' });
-
-        const hashed = await bcrypt.hash(password, 10);
-        
-        const user = new User({ name, email, password: hashed, role });
-        await user.save();
-        
-        res.status(201).json({ msg: 'User registered successfully' });
-    } catch (err) {
-        if (err.name === 'ValidationError') {
-            return res.status(400).json({ msg: err.message });
+    console.log(req.body);
+        try {
+            const existing = await User.findOne({ email });
+            if (existing) return res.status(400).json({ msg: 'User already exists' });
+    
+            const hashed = await bcrypt.hash(password, 10);
+            
+            const user = new User({ name, email, password: hashed, role });
+            await user.save();
+            
+            res.status(201).json({ msg: 'User registered successfully' });
+        } catch (err) {
+            if (err.name === 'ValidationError') {
+                return res.status(400).json({ msg: err.message });
+            }
+            console.error('Registration error:', err);
+            res.status(500).send('Server error');
         }
-        console.error('Registration error:', err);
-        res.status(500).send('Server error');
-    }
-});
+};
 
-// Login
-router.post('/login', async (req, res) => {
+export const login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
@@ -54,11 +44,9 @@ router.post('/login', async (req, res) => {
     } catch (err) {
         res.status(500).send('Server error');
     }
-});
+};
 
-
-// Forgot Password
-router.post('/forgot-password', async (req, res) => {
+export const forgotPassword = async (req, res) => {
     const { email } = req.body;
     try {
         const user = await User.findOne({ email });
@@ -79,30 +67,28 @@ router.post('/forgot-password', async (req, res) => {
     } catch (err) {
         res.status(500).send('Server error');
     }
-});
+};
 
-// Verify OTP
-router.post('/verify-otp', async (req, res) => {
+export const verifyOtp = async (req, res) => {
     const { email, otp } = req.body;
-    try {
-        const user = await User.findOne({ email });
-
-        if (!user || user.otp !== otp) {
-            return res.status(400).json({ msg: 'Invalid OTP' });
+        try {
+            const user = await User.findOne({ email });
+    
+            if (!user || user.otp !== otp) {
+                return res.status(400).json({ msg: 'Invalid OTP' });
+            }
+    
+            if (Date.now() > user.otpExpires) {
+                return res.status(400).json({ msg: 'OTP expired' });
+            }
+    
+            res.json({ msg: 'OTP verified. You can now reset your password.' });
+        } catch (err) {
+            res.status(500).send('Server error');
         }
+};
 
-        if (Date.now() > user.otpExpires) {
-            return res.status(400).json({ msg: 'OTP expired' });
-        }
-
-        res.json({ msg: 'OTP verified. You can now reset your password.' });
-    } catch (err) {
-        res.status(500).send('Server error');
-    }
-});
-
-// Reset Password
-router.post('/reset-password', async (req, res) => {
+export const resetPassword = async (req, res) => {
     const { email, newPassword } = req.body;
 
     try {
@@ -119,8 +105,4 @@ router.post('/reset-password', async (req, res) => {
     } catch (err) {
         res.status(500).send('Server error');
     }
-});
-
-  
-
-export default router;
+};
