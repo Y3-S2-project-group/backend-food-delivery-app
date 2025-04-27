@@ -1,18 +1,14 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const cors = require('cors');
+dotenv.config();
+
 
 const paymentRoutes = require('./routes/payment');
-
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-console.log(stripe);
-console.log('Stripe Secret Key:', process.env.STRIPE_SECRET_KEY);
+const cors = require('cors');
 
 const app = express();
 app.use(express.json());
-
 app.use(cors());
-dotenv.config();
 
 app.use('/api/payments', paymentRoutes);
 
