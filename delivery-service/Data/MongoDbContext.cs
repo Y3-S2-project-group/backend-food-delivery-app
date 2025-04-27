@@ -1,5 +1,6 @@
 // create the mongo db context
 using MongoDB.Driver;
+using delivery_service.Models;
 
 namespace delivery_service.Data
 {
@@ -12,7 +13,6 @@ namespace delivery_service.Data
         var client = new MongoClient(configuration["DatabaseSettings:ConnectionString"]);
         _database = client.GetDatabase(configuration["DatabaseSettings:DatabaseName"]);
     }
-
-        // public IMongoCollection<Delivery> Deliveries => _database.GetCollection<Delivery>("Deliveries");
+        public IMongoCollection<Delivery> Deliveries => _database.GetCollection<Delivery>("Deliveries");
     }
 }
