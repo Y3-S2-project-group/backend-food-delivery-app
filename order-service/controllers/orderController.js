@@ -1,10 +1,9 @@
 // controllers/orderController.js
 import Order from "../models/Order.js";
 
-// 1.  Place a new order
+// 🚀 1. Place a new order
 export const placeOrder = async (req, res) => {
   try {
-    // Check if req.body exists
     if (!req.body) {
       return res.status(400).json({ 
         success: false, 
@@ -21,10 +20,8 @@ export const placeOrder = async (req, res) => {
       status 
     } = req.body;
 
-    // Get customerId from authenticated user
     const customerId = req.user.id;
 
-    // Validation
     if (!restaurantId || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ 
         success: false, 
@@ -32,7 +29,6 @@ export const placeOrder = async (req, res) => {
       });
     }
 
-    // Validate each item has required fields
     for (const item of items) {
       if (!item.itemId || !item.quantity || !item.price) {
         return res.status(400).json({
@@ -42,7 +38,6 @@ export const placeOrder = async (req, res) => {
       }
     }
 
-    // Calculate total amount if not provided
     let calculatedTotal = totalAmount;
     if (!calculatedTotal) {
       calculatedTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -55,10 +50,8 @@ export const placeOrder = async (req, res) => {
       });
     }
 
-    // Validate and set status (only allow DRAFT or CONFIRMED)
     const orderStatus = status === 'CONFIRMED' ? 'CONFIRMED' : 'DRAFT';
 
-    // Create new order
     const newOrder = new Order({
       customerId,
       restaurantId,
@@ -70,10 +63,8 @@ export const placeOrder = async (req, res) => {
       paymentStatus: 'PENDING'
     });
 
-    // Save order to database
     const savedOrder = await newOrder.save();
 
-    // Return success response with created order
     return res.status(201).json({
       success: true,
       message: 'Order placed successfully',
@@ -90,52 +81,90 @@ export const placeOrder = async (req, res) => {
   }
 };
 
-// 2. Modify an order (only if status is DRAFT)
+// 🚀 2. Modify an order (only if status is DRAFT)
 export const modifyOrder = async (req, res) => {
   try {
-    const orderId = req.params.id;
-    const updates = req.body;
-    const { status, cancellationReason } = updates;
-
-    // We can use req.order from isOrderOwner middleware
-    const order = req.order;
+    // Get orderId from route params - this should match your route definition
+    const orderId = req.params.id || req.params.orderId;
     
-    // Only DRAFT orders can be modified
-    if (order.status !== "DRAFT") {
-      return res.status(400).json({ 
+    if (!orderId) {
+      return res.status(400).json({
         success: false,
-        message: "Order cannot be modified after it's confirmed or cancelled" 
+        message: "Order ID is required"
       });
     }
 
-    // Handle cancellation in DRAFT state
+    console.log(`Attempting to modify order: ${orderId}`);
+    
+    const updates = req.body;
+    const { status, cancellationReason } = updates;
+
+    // Find the order by ID
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      console.log(`Order not found with ID: ${orderId}`);
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    // Check if order is in DRAFT status
+    if (order.status !== "DRAFT") {
+      return res.status(400).json({
+        success: false,
+        message: "Order cannot be modified after it's confirmed or cancelled"
+      });
+    }
+
+    // Handle cancellation
     if (status === "CANCELLED") {
-      // Require cancellation reason
       if (!cancellationReason) {
         return res.status(400).json({
           success: false,
           message: "Cancellation reason is required when cancelling an order"
         });
       }
-      
+
       order.status = "CANCELLED";
       order.cancellationReason = cancellationReason;
     } else {
-      // For other updates, ensure status remains DRAFT
-      updates.status = "DRAFT"; // Ensure status can't be changed to anything except CANCELLED
-      Object.assign(order, updates);
+      // For modifying items, customerInfo, totalAmount, etc.
+      if (updates.items) {
+        order.items = updates.items;
+      }
+      
+      if (updates.customerInfo) {
+        order.customerInfo = updates.customerInfo;
+      }
+      
+      if (updates.customerLocation) {
+        order.customerLocation = updates.customerLocation;
+      }
+      
+      if (updates.totalAmount) {
+        order.totalAmount = updates.totalAmount;
+      }
+      
+      // If we want to calculate total amount based on items
+      if (updates.items && !updates.totalAmount) {
+        order.totalAmount = updates.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      }
     }
 
+    console.log("Saving updated order");
     const updatedOrder = await order.save();
-    
+
     return res.status(200).json({
       success: true,
       message: order.status === "CANCELLED" ? "Order cancelled successfully" : "Order modified successfully",
       data: updatedOrder
     });
+
   } catch (error) {
     console.error("Error modifying order:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
       message: "Failed to modify order",
       error: error.message
@@ -143,10 +172,10 @@ export const modifyOrder = async (req, res) => {
   }
 };
 
-// 3. Confirm an order
+
+// 🚀 3. Confirm an order
 export const confirmOrder = async (req, res) => {
   try {
-    // We can use req.order from isOrderOwner middleware
     const order = req.order;
 
     if (order.status !== "DRAFT") {
@@ -156,7 +185,6 @@ export const confirmOrder = async (req, res) => {
       });
     }
 
-    // Update status to CONFIRMED
     order.status = "CONFIRMED";
     const updatedOrder = await order.save();
 
@@ -175,17 +203,14 @@ export const confirmOrder = async (req, res) => {
   }
 };
 
-//4. Update order status (after CONFIRMED)
+// 🚀 4. Update order status (after CONFIRMED)
 export const updateOrderStatus = async (req, res) => {
   try {
     console.log('Incoming request to update order status');
     
     const { status, cancellationReason } = req.body;
-    
-    // We can use req.order from isOrderOwner middleware
     const order = req.order;
 
-    // Only CONFIRMED orders can proceed to next statuses
     if (order.status !== 'CONFIRMED') {
       return res.status(400).json({
         success: false,
@@ -193,7 +218,6 @@ export const updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Allowed next statuses from CONFIRMED
     const allowedStatusTransitions = [
       'PLACED',
       'CANCELLED'
@@ -206,7 +230,6 @@ export const updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Cancellation requires a reason
     if (status === 'CANCELLED' && !cancellationReason) {
       return res.status(400).json({
         success: false,
@@ -214,7 +237,6 @@ export const updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Apply status update
     order.status = status;
     if (status === 'CANCELLED') {
       order.cancellationReason = cancellationReason;
@@ -230,7 +252,7 @@ export const updateOrderStatus = async (req, res) => {
       data: updatedOrder
     });
   } catch (error) {
-    console.error('Error updating order status:', error);
+    console.error('🔥 Error updating order status:', error);
     return res.status(500).json({
       success: false,
       message: 'An error occurred while updating the order status',
@@ -239,15 +261,12 @@ export const updateOrderStatus = async (req, res) => {
   }
 };
 
-// 5. Update order in PLACED status
+// 🚀 5. Update order in PLACED status
 export const updatePlacedOrder = async (req, res) => {
   try {
     const { status } = req.body;
-    
-    // We can use req.order from isOrderOwner middleware
     const order = req.order;
 
-    // Check if the order is in a status that can be updated
     if (order.status !== 'PLACED' && order.status !== 'PREPARING') {
       return res.status(400).json({
         success: false,
@@ -255,7 +274,6 @@ export const updatePlacedOrder = async (req, res) => {
       });
     }
 
-    // Define valid transitions for each current status
     let validNextStatus;
     if (order.status === 'PLACED') {
       validNextStatus = 'PREPARING';
@@ -263,7 +281,6 @@ export const updatePlacedOrder = async (req, res) => {
       validNextStatus = 'READY_FOR_DELIVERY';
     }
 
-    // Ensure the requested status is valid for the current state
     if (status !== validNextStatus) {
       return res.status(400).json({
         success: false,
@@ -271,7 +288,6 @@ export const updatePlacedOrder = async (req, res) => {
       });
     }
 
-    // Update the order status
     order.status = status;
     const updatedOrder = await order.save();
 
@@ -290,13 +306,11 @@ export const updatePlacedOrder = async (req, res) => {
   }
 };
 
-// 6. Get order status
+// 🚀 6. Get order status
 export const getOrderStatus = async (req, res) => {
   try {
-    // We can use req.order from isOrderOwner middleware
     const order = req.order;
 
-    // Include cancellation reason if order is cancelled
     const responseData = {
       status: order.status,
       paymentStatus: order.paymentStatus,
@@ -304,7 +318,6 @@ export const getOrderStatus = async (req, res) => {
       updatedAt: order.updatedAt
     };
 
-    // Add cancellation reason if order is cancelled
     if (order.status === 'CANCELLED' && order.cancellationReason) {
       responseData.cancellationReason = order.cancellationReason;
     }
@@ -323,19 +336,15 @@ export const getOrderStatus = async (req, res) => {
   }
 };
 
-
-// 7. Get orders ready for delivery (simplified)
+// 🚀 7. Get orders ready for delivery
 export const getOrdersReadyForDelivery = async (req, res) => {
   try {
-    let query = { status: 'READY_FOR_DELIVERY' };
+    const query = { status: 'READY_FOR_DELIVERY' };
     
-    // If user is a restaurant, only show their orders
-    if (req.user.role === 'restaurant') {
-      query.restaurantId = req.user.id;
-    }
+    console.log("Query for ready orders:", query);
     
-    // Find all orders with status READY_FOR_DELIVERY
     const readyOrders = await Order.find(query);
+    console.log(`Found ${readyOrders.length} orders ready for delivery`);
     
     if (readyOrders.length === 0) {
       return res.status(200).json({
@@ -346,18 +355,18 @@ export const getOrdersReadyForDelivery = async (req, res) => {
       });
     }
 
-    // Map orders to include only the most essential delivery information
     const deliveryOrders = readyOrders.map(order => ({
       orderId: order._id,
       restaurantId: order.restaurantId,
-      // Only essential customer details and customerInfo
       customerInfo: {
-        street: order.customerInfo.street,
-        city: order.customerInfo.city,
-        contactNumber: order.customerInfo.contactNumber,
+        street: order.customerInfo?.street || '',
+        city: order.customerInfo?.city || '',
+        contactNumber: order.customerInfo?.contactNumber || ''
       },
-      customerLocation: order.customerLocation.coordinates,
-      // Simplified items info
+      customerLocation: {
+        type: order.customerLocation?.type || 'Point',
+        coordinates: order.customerLocation?.coordinates || []
+      },
       totalItems: order.items.length,
       totalAmount: order.totalAmount,
       createdAt: order.createdAt

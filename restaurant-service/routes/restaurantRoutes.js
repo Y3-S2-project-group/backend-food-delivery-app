@@ -1,21 +1,37 @@
 import express from 'express';
-import { createRestaurant, getMyRestaurants, getRestaurantById, updateRestaurant, deleteRestaurant, updateRestaurantStatus, getPendingRestaurants } from '../controllers/restaurantController.js';
-import authenticateToken from '../middleware/authMiddleware.js';
+import { 
+  createRestaurant,
+  getMyRestaurants,
+  getRestaurantById,
+  updateRestaurant,
+  deleteRestaurant,
+  updateRestaurantStatus,
+  getPendingRestaurants,
+  getApprovedRestaurants // <-- ✅ Import the new controller
+} from '../controllers/restaurantController.js';
 
+import { authenticateToken, checkRole } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+// Only authenticated users can create a restaurant (e.g., restaurant manager)
+router.post('/', authenticateToken, checkRole('restaurant'), createRestaurant);
 
-router.post('/', authenticateToken, createRestaurant);
-router.get('/pending', getPendingRestaurants); // Admin access (still authenticated, maybe add role check)
-router.get('/', authenticateToken, getMyRestaurants);
-router.get('/:id', authenticateToken, getRestaurantById);
-router.put('/:id', authenticateToken, updateRestaurant);
-router.delete('/:id', authenticateToken, deleteRestaurant);
+// Only admin can view all pending restaurant approvals
+router.get('/pending', authenticateToken, checkRole('admin'), getPendingRestaurants);
 
-router.patch('/:id/verify', updateRestaurantStatus); // Admin access (still authenticated, maybe add role check)
+// ✅ Anyone authenticated (maybe customer or restaurant) can view approved restaurants
+router.get('/approved', getApprovedRestaurants);
 
+// Only the logged-in restaurant manager can view their own restaurants
+router.get('/', authenticateToken, checkRole('restaurant'), getMyRestaurants);
 
+// Authenticated restaurant user can get/update/delete their restaurant by ID
+router.get('/:id', authenticateToken, checkRole('restaurant'), getRestaurantById);
+router.put('/:id', authenticateToken, checkRole('restaurant'), updateRestaurant);
+router.delete('/:id', authenticateToken, checkRole('restaurant'), deleteRestaurant);
 
+// Only admin can verify/approve a restaurant
+router.patch('/:id/verify', authenticateToken, checkRole('admin'), updateRestaurantStatus);
 
 export default router;
