@@ -13,16 +13,13 @@ const UserSchema = new mongoose.Schema({
   otpExpires: Date,
   latitude: {
     type: Number,
-    required: function () {
-      return this.role === "delivery";
-    },
+    default: null,
   },
   longitude: {
     type: Number,
-    required: function () {
-      return this.role === "delivery";
-    },
+    default: null,
   },
+  
 });
 
 export default mongoose.model("User", UserSchema);

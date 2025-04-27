@@ -106,3 +106,65 @@ export const resetPassword = async (req, res) => {
         res.status(500).send('Server error');
     }
 };
+
+
+// ***** Delivery Person and Restaurant Manager registration functions *****
+export const registerDeliveryPerson = async (req, res) => {
+    try {
+      const { name, email, password } = req.body;  // No latitude, longitude needed now
+  
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already registered." });
+      }
+  
+      const hashedPassword = await bcrypt.hash(password, 10);
+  
+      const newUser = new User({
+        name,
+        email,
+        password: hashedPassword,
+        role: "delivery-person",
+        latitude: null,
+        longitude: null,
+      });
+  
+      await newUser.save();
+  
+      res.status(201).json({ message: "Delivery person registered successfully." });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Registration failed.", error: error.message });
+    }
+  };
+  
+  
+  export const registerRestaurantManager = async (req, res) => {
+    try {
+      const { name, email, password } = req.body;
+  
+      // Check if user already exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already registered." });
+      }
+  
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+  
+      // Create restaurant manager user
+      const newUser = new User({
+        name,
+        email,
+        password: hashedPassword,
+        role: "restaurant",
+      });
+  
+      await newUser.save();
+  
+      res.status(201).json({ message: "Restaurant manager registered successfully." });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Registration failed.", error: error.message });
+    }
+  };
