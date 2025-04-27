@@ -17,10 +17,6 @@ app.get('/', (req, res) => {
 });
 
 
-// middleware to handle errors this is a global error handler
-app.use((err, req, res, next) => {
-    res.status(500).send({ message: err.message });
-});
 
 
 // Middleware
@@ -35,6 +31,11 @@ app.use('/api', orderRoutes);//this is the route for the order service
 
 
 
+// 404 Handler (for unmatched routes)
+app.use((req, res, next) => {
+  res.status(404).json({ success: false, message: 'Route not found' });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
@@ -45,13 +46,7 @@ app.use((err, req, res, next) => {
     });
   });
   
-  // Handle 404 routes
-  app.use((req, res) => {
-    res.status(404).json({ success: false, message: 'Route not found' });
-  });
-
-
-
+  
 
 // Connect to the database
 const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/orderDB'; // Default to local DB if not set
