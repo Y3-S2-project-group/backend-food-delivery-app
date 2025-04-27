@@ -1,5 +1,21 @@
-FROM node:18
+# Base image
+FROM node:18-alpine
+
+# Create app directory
 WORKDIR /app
-COPY . .
+
+# Copy package files first for better caching
+COPY package*.json ./
 RUN npm install
-CMD ["node", "server.js"]
+
+# Copy application code
+COPY . .
+
+# Define environment variable defaults
+ENV PORT=8000
+
+# Expose the port
+EXPOSE 8000
+
+# Start the application
+CMD ["npm", "start"]
