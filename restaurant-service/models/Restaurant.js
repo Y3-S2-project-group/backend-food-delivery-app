@@ -1,3 +1,4 @@
+// models/Restaurant.js
 import mongoose from 'mongoose';
 
 const restaurantSchema = new mongoose.Schema({
@@ -9,12 +10,15 @@ const restaurantSchema = new mongoose.Schema({
   address: {
     street: String,
     city: String,
-    latitude: {
-      type: Number,
+  },
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
       required: true,
     },
-    longitude: {
-      type: Number,
+    coordinates: {
+      type: [Number], // [longitude, latitude]
       required: true,
     },
   },
@@ -42,6 +46,9 @@ const restaurantSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+// Create 2dsphere index for geospatial queries
+restaurantSchema.index({ location: '2dsphere' });
 
 const Restaurant = mongoose.model('Restaurant', restaurantSchema);
 
