@@ -459,7 +459,7 @@ export const getUserOrders = async (req, res) => {
 // 🚀 Delete an order (only if status is DRAFT)
 export const deleteOrder = async (req, res) => {
   try {
-    const orderId = req.params.id || req.params.orderId;
+    const orderId = req.params.orderId;
     const userId = req.user.id;
     
     if (!orderId) {
@@ -509,5 +509,66 @@ export const deleteOrder = async (req, res) => {
       error: error.message
     });
   }
+}
+  
+
+  // 🚀 Get complete order details
+export const getOrderDetails = async (req, res) => {
+  try {
+    const order = req.order;
+
+    return res.status(200).json({
+      success: true,
+      data: order
+    });
+  } catch (error) {
+    console.error("Error getting order details:", error);
+    return res.status(500).json({ 
+      success: false,
+      message: "Failed to get order details",
+      error: error.message 
+    });
+  }
 };
 
+
+export const getConfirmedOrders = async (req, res) => {
+  try {
+    const restaurantId = req.params.restaurantId || req.query.restaurantId;
+
+    if (!restaurantId) {
+      return res.status(400).json({
+        success: false,
+        message: "Restaurant ID is required"
+      });
+    }
+
+    // Find confirmed orders for the specified restaurant
+    const confirmedOrders = await Order.find({ 
+      restaurantId: restaurantId
+    }).sort({ createdAt: -1 }); // Most recent first
+    
+    if (confirmedOrders.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No confirmed orders found for this restaurant",
+        data: []
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      message: "Confirmed orders retrieved successfully",
+      count: confirmedOrders.length,
+      data: confirmedOrders
+    });
+    
+  } catch (error) {
+    console.error("Error fetching confirmed orders:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to retrieve confirmed orders",
+      error: error.message
+    });
+  }
+};

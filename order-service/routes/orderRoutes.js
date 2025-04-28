@@ -9,6 +9,8 @@ import {
   getOrdersReadyForDelivery,
   deleteOrder,
   getUserOrders,
+  getOrderDetails,
+  getConfirmedOrders
 
 } from "../controllers/orderController.js";
 import { authenticateToken, authorizeRole, isOrderOwner } from "../middleware/authMiddleware.js";
@@ -71,7 +73,7 @@ router.get("/orders/ready-for-delivery",
 
 // Delete order
 // Get user orders
-router.get("/orders", 
+router.get("/orders/user", 
   authenticateToken, 
   authorizeRole(['customer']), 
   getUserOrders
@@ -84,6 +86,20 @@ router.delete('/orders/:orderId',
   deleteOrder,
 );
 
+// Get complete order details
+router.get("/orders/:id", 
+  authenticateToken, 
+  authorizeRole(['customer', 'restaurant']), 
+  isOrderOwner, 
+  getOrderDetails
+);
+
+
+router.get("/confirmed-orders", 
+  authenticateToken, 
+  authorizeRole(['admin', 'restaurant']), 
+  getConfirmedOrders
+);
 
 
 export default router;

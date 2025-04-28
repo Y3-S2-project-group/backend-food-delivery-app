@@ -27,7 +27,7 @@ router.get('/approved', getApprovedRestaurants);
 router.get('/', authenticateToken, checkRole('restaurant'), getMyRestaurants);
 
 // Authenticated restaurant user can get/update/delete their restaurant by ID
-router.get('/:id', authenticateToken, checkRole('restaurant'), getRestaurantById);
+router.get('/:id', getRestaurantById);
 router.put('/:id', authenticateToken, checkRole('restaurant'), updateRestaurant);
 router.delete('/:id', authenticateToken, checkRole('restaurant'), deleteRestaurant);
 
