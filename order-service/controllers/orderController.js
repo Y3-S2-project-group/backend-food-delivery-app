@@ -82,95 +82,102 @@ export const placeOrder = async (req, res) => {
 };
 
 // 🚀 2. Modify an order (only if status is DRAFT)
+// 🚀 2. Modify an order (only if status is DRAFT)
 export const modifyOrder = async (req, res) => {
   try {
-    // Get orderId from route params - this should match your route definition
     const orderId = req.params.id || req.params.orderId;
-    
     if (!orderId) {
-      return res.status(400).json({
-        success: false,
-        message: "Order ID is required"
-      });
+      return res.status(400).json({ success: false, message: "Order ID is required" });
     }
 
-    console.log(`Attempting to modify order: ${orderId}`);
-    
     const updates = req.body;
-    const { status, cancellationReason } = updates;
-
-    // Find the order by ID
     const order = await Order.findById(orderId);
 
     if (!order) {
-      console.log(`Order not found with ID: ${orderId}`);
-      return res.status(404).json({
-        success: false,
-        message: "Order not found"
-      });
+      return res.status(404).json({ success: false, message: "Order not found" });
     }
 
-    // Check if order is in DRAFT status
-    if (order.status !== "DRAFT") {
-      return res.status(400).json({
-        success: false,
-        message: "Order cannot be modified after it's confirmed or cancelled"
-      });
+    // Check if the order is in DRAFT status unless it's a cancellation
+    if (order.status !== "DRAFT" && updates.status !== "CANCELLED") {
+      return res.status(400).json({ success: false, message: "Only DRAFT orders can be modified" });
     }
 
     // Handle cancellation
-    if (status === "CANCELLED") {
-      if (!cancellationReason) {
-        return res.status(400).json({
-          success: false,
-          message: "Cancellation reason is required when cancelling an order"
-        });
+    if (updates.status === "CANCELLED") {
+      if (!updates.cancellationReason) {
+        return res.status(400).json({ success: false, message: "Cancellation reason is required" });
+      }
+      order.status = "CANCELLED";
+      order.cancellationReason = updates.cancellationReason;
+    } else {
+      // Handle item updates
+      if (updates.items) {
+        order.items = updates.items.map(item => ({
+          itemId: item.itemId,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price
+        }));
+
+        // Recalculate total if items updated
+        order.totalAmount = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
       }
 
-      order.status = "CANCELLED";
-      order.cancellationReason = cancellationReason;
-    } else {
-      // For modifying items, customerInfo, totalAmount, etc.
-      if (updates.items) {
-        order.items = updates.items;
-      }
-      
+      // Handle customer info updates
       if (updates.customerInfo) {
-        order.customerInfo = updates.customerInfo;
+        // Create a copy to avoid modifying the request object
+        const customerInfoUpdates = { ...updates.customerInfo };
+
+        // Handle phone number format - convert to numeric string if needed for DB schema
+        if (customerInfoUpdates.contactNumber) {
+          // If schema expects a number, we strip non-numeric characters
+          const numericOnly = customerInfoUpdates.contactNumber.toString().replace(/\D/g, '');
+          
+          // Store as a number if needed by mongoose schema
+          customerInfoUpdates.contactNumber = parseInt(numericOnly, 10);
+          
+          // If the parsed value is NaN (e.g., empty string after stripping),
+          // set a default or return an error
+          if (isNaN(customerInfoUpdates.contactNumber)) {
+            return res.status(400).json({ 
+              success: false, 
+              message: "Contact number must contain numeric digits" 
+            });
+          }
+        }
+
+        // Update customer info
+        order.customerInfo = {
+          ...order.customerInfo,
+          ...customerInfoUpdates
+        };
       }
-      
-      if (updates.customerLocation) {
-        order.customerLocation = updates.customerLocation;
-      }
-      
-      if (updates.totalAmount) {
+
+      // Handle other updates
+      if (updates.totalAmount !== undefined) {
         order.totalAmount = updates.totalAmount;
-      }
-      
-      // If we want to calculate total amount based on items
-      if (updates.items && !updates.totalAmount) {
-        order.totalAmount = updates.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       }
     }
 
-    console.log("Saving updated order");
+    // Save the updated order
     const updatedOrder = await order.save();
-
+    
     return res.status(200).json({
       success: true,
-      message: order.status === "CANCELLED" ? "Order cancelled successfully" : "Order modified successfully",
+      message: "Order modified successfully",
       data: updatedOrder
     });
 
   } catch (error) {
     console.error("Error modifying order:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to modify order",
-      error: error.message
+    return res.status(500).json({ 
+      success: false, 
+      message: "Failed to modify order", 
+      error: error.message 
     });
   }
 };
+
 
 
 // 🚀 3. Confirm an order
@@ -383,6 +390,164 @@ export const getOrdersReadyForDelivery = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to retrieve orders ready for delivery",
+      error: error.message
+    });
+  }
+};
+
+
+export const getUserOrders = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User ID is required"
+      });
+    }
+    
+    const orders = await Order.find({ customerId: userId })
+      .sort({ createdAt: -1 }); // Most recent first
+    
+    if (orders.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No orders found for this user",
+        data: []
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      message: "Orders retrieved successfully",
+      count: orders.length,
+      data: orders
+    });
+    
+  } catch (error) {
+    console.error("Error fetching user orders:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to retrieve user orders",
+      error: error.message
+    });
+  }
+};
+
+
+// 🚀 Delete an order (only if status is DRAFT)
+export const deleteOrder = async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+    const userId = req.user.id;
+    
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "Order ID is required"
+      });
+    }
+    
+    const order = await Order.findById(orderId);
+    
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+    
+    // Check if the order belongs to the user
+    if (order.customerId.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete this order"
+      });
+    }
+    
+    // Only draft orders can be deleted
+    if (order.status !== "DRAFT") {
+      return res.status(400).json({
+        success: false,
+        message: "Only orders in DRAFT status can be deleted"
+      });
+    }
+    
+    await Order.findByIdAndDelete(orderId);
+    
+    return res.status(200).json({
+      success: true,
+      message: "Order deleted successfully"
+    });
+    
+  } catch (error) {
+    console.error("Error deleting order:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete order",
+      error: error.message
+    });
+  }
+}
+  
+
+  // 🚀 Get complete order details
+export const getOrderDetails = async (req, res) => {
+  try {
+    const order = req.order;
+
+    return res.status(200).json({
+      success: true,
+      data: order
+    });
+  } catch (error) {
+    console.error("Error getting order details:", error);
+    return res.status(500).json({ 
+      success: false,
+      message: "Failed to get order details",
+      error: error.message 
+    });
+  }
+};
+
+
+export const getConfirmedOrders = async (req, res) => {
+  try {
+    const restaurantId = req.params.restaurantId || req.query.restaurantId;
+
+    if (!restaurantId) {
+      return res.status(400).json({
+        success: false,
+        message: "Restaurant ID is required"
+      });
+    }
+
+    // Find confirmed orders for the specified restaurant
+    const confirmedOrders = await Order.find({ 
+      restaurantId: restaurantId
+    }).sort({ createdAt: -1 }); // Most recent first
+    
+    if (confirmedOrders.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No confirmed orders found for this restaurant",
+        data: []
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      message: "Confirmed orders retrieved successfully",
+      count: confirmedOrders.length,
+      data: confirmedOrders
+    });
+    
+  } catch (error) {
+    console.error("Error fetching confirmed orders:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to retrieve confirmed orders",
       error: error.message
     });
   }
