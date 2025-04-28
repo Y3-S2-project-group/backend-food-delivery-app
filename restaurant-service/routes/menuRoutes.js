@@ -19,7 +19,7 @@ router.get('/restaurant/:restaurantId', authenticateToken, getMenuItems);
 
 // 🔒 Protected route - Owners can create menu item
 router.post('/', authenticateToken, createMenuItem);
-
+   
 // 🔒 Protected route - Owners can update menu item
 router.put('/:id', authenticateToken, updateMenuItem);
 
