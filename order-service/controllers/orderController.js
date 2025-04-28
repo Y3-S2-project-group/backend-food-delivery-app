@@ -489,5 +489,57 @@ export const deleteOrder = async (req, res) => {
       error: error.message
     });
   }
+}
+  
+
+  // 🚀 Get complete order details
+export const getOrderDetails = async (req, res) => {
+  try {
+    const order = req.order;
+
+    return res.status(200).json({
+      success: true,
+      data: order
+    });
+  } catch (error) {
+    console.error("Error getting order details:", error);
+    return res.status(500).json({ 
+      success: false,
+      message: "Failed to get order details",
+      error: error.message 
+    });
+  }
 };
 
+
+export const getConfirmedOrders = async (req, res) => {
+  try {
+    // Find all orders with CONFIRMED status
+    const confirmedOrders = await Order.find({ 
+      status: 'CONFIRMED' 
+    }).sort({ createdAt: -1 }); // Most recent first
+    
+    if (confirmedOrders.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No confirmed orders found",
+        data: []
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      message: "Confirmed orders retrieved successfully",
+      count: confirmedOrders.length,
+      data: confirmedOrders
+    });
+    
+  } catch (error) {
+    console.error("Error fetching confirmed orders:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to retrieve confirmed orders",
+      error: error.message
+    });
+  }
+};
