@@ -1,11 +1,10 @@
-const express = require('express');
-const dotenv = require('dotenv'); // Import dotenv first
-const cors = require('cors');
-
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
 
 dotenv.config(); 
 
-const paymentRoutes = require('./routes/payment');
+import paymentRoutes from './routes/payment.js';
 
 const app = express();
 
