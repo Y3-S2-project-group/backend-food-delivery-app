@@ -1,6 +1,8 @@
 // controllers/orderController.js
 import Order from "../models/Order.js";
 
+import { processPayment } from "../../payment-service/utils/paymentUtils.js";
+
 // 🚀 1. Place a new order
 export const placeOrder = async (req, res) => {
   try {
@@ -192,7 +194,25 @@ export const confirmOrder = async (req, res) => {
       });
     }
 
+    // Calculate the total amount for the payment
+    const totalAmount = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    // Process the payment
+    const paymentResult = await processPayment(order._id, totalAmount);
+
+    if (!paymentResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Payment failed',
+        error: paymentResult.message,
+      });
+    }
+
+    console.log('Payment successful:', paymentResult.data);
+
+
     order.status = "CONFIRMED";
+    order.paymentStatus = 'PAID';
     const updatedOrder = await order.save();
 
     return res.status(200).json({
