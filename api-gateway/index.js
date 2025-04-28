@@ -27,12 +27,14 @@ const consoleLog = (message, color) => {
     console.log(`${color}${message}${colors.reset}`);
 };
 
+
+// Auth Service
 apiGateway.use('/api/auth', (req, res) => {
-  const originalUrl = req.originalUrl; // This gives you the full URL path
-  const targetPath = originalUrl; // Keep the full path
+  const originalUrl = req.originalUrl; 
+  const targetPath = originalUrl; 
   const targetUrl = process.env.AUTH_SERVICE;
   
-  consoleLog(`Request sent to AUTH service for ${req.method} ${targetPath}`, colors.green);
+  consoleLog(`Request sent to Auth service for ${req.method} ${targetPath}`, colors.green);
   console.log('Forwarding to:', targetUrl + targetPath);  
   req.url = targetPath; // Override the URL
   proxy.web(req, res, { target: targetUrl });
@@ -41,38 +43,69 @@ apiGateway.use('/api/auth', (req, res) => {
 // Authentication middleware for other /api routes
 apiGateway.use('/api', authenticateToken);
 
-// RESTAURANT service
-apiGateway.use('/api/restaurants', (req, res) => {
-  const targetUrl = process.env.RESTAURANT_SERVICE;
-  consoleLog(`Request sent to RESTAURANT service at ${targetUrl}`, colors.cyan);
-  req.url = targetPath; // Override the URL
-  proxy.web(req, res, { target: targetUrl });
-});
 
+// Restaurant service
+apiGateway.use('/api/restaurants', (req, res) => {
+    const originalUrl = req.originalUrl; 
+    const targetPath = originalUrl;       
+    const targetUrl = process.env.RESTAURANT_SERVICE;
+    
+    consoleLog(`Request sent to Restaurant service for ${req.method} ${targetPath}`, colors.cyan);
+    console.log('Forwarding to:', targetUrl + targetPath);  
+    
+    req.url = targetPath; 
+    proxy.web(req, res, { target: targetUrl });
+});
+  
 
 // ORDER service
 apiGateway.use('/api/order', (req, res) => {
-    consoleLog(`Request sent to ORDER service`, colors.yellow);
-    proxy.web(req, res, { target: process.env.ORDER_SERVICE });
+    const originalUrl = req.originalUrl; 
+    const targetPath = originalUrl;       
+    const targetUrl = process.env.ORDER_SERVICE;
+    
+    consoleLog(`Request sent to Order service for ${req.method} ${targetPath}`, colors.yellow);
+    console.log('Forwarding to:', targetUrl + targetPath);  
+    
+    req.url = targetPath; 
+    proxy.web(req, res, { target: targetUrl });
 });
+
 
 // PAYMENT service
 apiGateway.use('/api/payment', (req, res) => {
-    consoleLog(`Request sent to PAYMENT service`, colors.magenta);
-    proxy.web(req, res, { target: process.env.PAYMENT_SERVICE });
+    const originalUrl = req.originalUrl; 
+    const targetPath = originalUrl;       
+    const targetUrl = process.env.PAYMENT_SERVICE;
+    
+    consoleLog(`Request sent to Payment service for ${req.method} ${targetPath}`, colors.magenta);
+    console.log('Forwarding to:', targetUrl + targetPath);  
+    
+    req.url = targetPath; 
+    proxy.web(req, res, { target: targetUrl });
 });
+
 
 // DELIVERY service
 apiGateway.use('/api/delivery', (req, res) => {
-    consoleLog(`Request sent to DELIVERY service`, colors.blue);
-    proxy.web(req, res, { target: process.env.DELIVERY_SERVICE });
+    const originalUrl = req.originalUrl; 
+    const targetPath = originalUrl;       
+    const targetUrl = process.env.DELIVERY_SERVICE;
+    
+    consoleLog(`Request sent to Delivery service for ${req.method} ${targetPath}`, colors.green);
+    console.log('Forwarding to:', targetUrl + targetPath);  
+    
+    req.url = targetPath; 
+    proxy.web(req, res, { target: targetUrl });
 });
+
 
 // Proxy error handler
 proxy.on('error', (error, req, res) => {
     console.error('Proxy Error:', error);
     res.status(500).send('Proxy Error');
 });
+
 
 // Start server
 apiGateway.listen(process.env.API_GATEWAY_PORT, () => {
