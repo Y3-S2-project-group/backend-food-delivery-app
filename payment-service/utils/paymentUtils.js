@@ -3,7 +3,7 @@ import axios from 'axios';
 
 export const processPayment = async (orderId, amount) => {
     try {
-        const response = await axios.post('http://localhost:5000/api/payments', {
+        const response = await axios.post('http://localhost:9000/api/payments', {
             orderId,
             amount,
         });
