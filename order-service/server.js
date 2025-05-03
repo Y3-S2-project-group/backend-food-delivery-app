@@ -43,29 +43,14 @@ app.use((err, req, res, next) => {
     });
   });
   
-  
-
-// Connect to the database
-const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/orderDB'; // Default to local DB if not set
-const port = process.env.PORT || 7000; // Default to 8000 if not set
-
-mongoose.connect(mongoURI)
-.then(() => {
-    // Listen for requests
-    app.listen(port, () => {
-        console.log(`Connected to db & Listening on port ${port}`);
-    });
-})
-.catch((err) => console.log(err));
-
-
-// connect to the database
-// mongoose.connect(process.env.MONGO_URI)
-// .then(() => {
-//     //listen for requests
-//     app.listen(process.env.PORT, ()=> {
-//     console.log(`Connected to db & Listening on ${process.env.PORT}`);
-// })
-// })
-
-// .catch((err) => console.log(err));
+  mongoose.connect(process.env.ORDER_MONGO_URI)
+  .then(() => {
+      // Listen for requests
+      app.listen(process.env.PORT, () => {
+          console.log(`Connected to db & Listening on port ${process.env.PORT}`);
+      });
+  })
+  .catch((err) => {
+      console.error('Failed to connect to MongoDB:', err.message);
+      process.exit(1); // Exit with error code
+  });

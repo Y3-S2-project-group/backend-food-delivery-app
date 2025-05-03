@@ -38,16 +38,31 @@ apiGateway.use('/api/auth', (req, res) => {
   proxy.web(req, res, { target: targetUrl });
 });
 
+apiGateway.use('/api/users', (req, res) => {
+    const originalUrl = req.originalUrl; // This gives you the full URL path
+    const targetPath = originalUrl; // Keep the full path
+    const targetUrl = process.env.AUTH_SERVICE;
+    
+    consoleLog(`Request sent to AUTH service for ${req.method} ${targetPath}`, colors.green);
+    console.log('Forwarding to:', targetUrl + targetPath);  
+    req.url = targetPath; // Override the URL
+    proxy.web(req, res, { target: targetUrl });
+  });
+
 // Authentication middleware for other /api routes
 apiGateway.use('/api', authenticateToken);
 
 // RESTAURANT service
-apiGateway.use('/api/restaurants', (req, res) => {
-  const targetUrl = process.env.RESTAURANT_SERVICE;
-  consoleLog(`Request sent to RESTAURANT service at ${targetUrl}`, colors.cyan);
-  req.url = targetPath; // Override the URL
-  proxy.web(req, res, { target: targetUrl });
-});
+apiGateway.use(['/api/restaurants', '/api/menus'], (req, res) => {
+    const originalUrl = req.originalUrl; // This gives you the full URL path
+    const targetPath = originalUrl; // Define targetPath
+    const targetUrl = process.env.RESTAURANT_SERVICE;
+    
+    consoleLog(`Request sent to RESTAURANT service at ${targetUrl}`, colors.cyan);
+    console.log('Forwarding to:', targetUrl + targetPath);
+    req.url = targetPath; // Now targetPath is defined
+    proxy.web(req, res, { target: targetUrl });
+  });
 
 
 // ORDER service
@@ -63,11 +78,16 @@ apiGateway.use('/api/payment', (req, res) => {
 });
 
 // DELIVERY service
-apiGateway.use('/api/delivery', (req, res) => {
-    consoleLog(`Request sent to DELIVERY service`, colors.blue);
-    proxy.web(req, res, { target: process.env.DELIVERY_SERVICE });
+apiGateway.use(['/api/delivery', '/api/deliveries'], (req, res) => {
+    const originalUrl = req.originalUrl; // This gives you the full URL path
+    const targetPath = originalUrl; // Keep the full path
+    const targetUrl = process.env.DELIVERY_SERVICE;
+    
+    consoleLog(`Request sent to DELIVERY service for ${req.method} ${targetPath}`, colors.blue);
+    console.log('Forwarding to:', targetUrl + targetPath);
+    req.url = targetPath; // Override the URL
+    proxy.web(req, res, { target: targetUrl });
 });
-
 // Proxy error handler
 proxy.on('error', (error, req, res) => {
     console.error('Proxy Error:', error);

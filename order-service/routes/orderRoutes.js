@@ -14,7 +14,6 @@ import {
 
 } from "../controllers/orderController.js";
 import { authenticateToken, authorizeRole, isOrderOwner } from "../middleware/authMiddleware.js";
-import { processPayment } from "../../payment-service/utils/paymentUtils.js";
 
 
 // Create router instance

@@ -1,14 +1,36 @@
 version: '3.8'
 
 services:
+  api-gateway:
+      build: ./api-gateway
+      container_name: api-gateway
+      ports:
+        - "8000:8000"
+      environment:
+        - API_GATEWAY_PORT=8000
+        - AUTH_SERVICE=http://auth-service:8001
+        - RESTAURANT_SERVICE=http://restaurant-service:5000
+        - ORDER_SERVICE=http://order-service:5001
+        - PAYMENT_SERVICE=http://payment-service:5003
+        - DELIVERY_SERVICE=http://delivery-service:8080
+        - JWT_SECRET=${JWT_SECRET}
+      depends_on:
+        - auth-service
+        - restaurant-service
+        - order-service
+        - payment-service
+        - delivery-service
+      networks:
+        - app-network
+        
   # Auth Service
   auth-service:
     build: ./auth-service
     container_name: auth-service
     ports:
-      - "8000:8000"
+      - "8001:8001"
     environment:
-      - PORT=${PORT}
+      - PORT=8001
       - MONGO_URI=${MONGO_URI}
       - JWT_SECRET=${JWT_SECRET}
       - EMAIL_USER=${EMAIL_USER}
@@ -16,7 +38,7 @@ services:
     networks:
       - app-network
   
- # Restaurant Service
+  # Restaurant Service
   restaurant-service:
     build: ./restaurant-service
     container_name: restaurant-service
@@ -28,8 +50,32 @@ services:
       - JWT_SECRET=${JWT_SECRET}
     networks:
       - app-network
+  # Order Service
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - ORDER_MONGO_URI=${ORDER_MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - app-network
+
+  # Payment Service
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    ports:
+      - "5003:5003"
+    environment:
+      - PORT=5003
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+    networks:
+      - app-network
       
-# Delivery Service
+  # Delivery Service
   delivery-service:
     build: ./delivery-service
     container_name: delivery-service
