@@ -1,82 +1,47 @@
 // controllers/orderController.js
 import Order from "../models/Order.js";
 
+import { processPayment } from "../../payment-service/utils/paymentUtils.js";
+
 // 🚀 1. Place a new order
 export const placeOrder = async (req, res) => {
   try {
-    if (!req.body) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Request body is missing' 
-      });
+    const { restaurantId, items, customerInfo, customerLocation, totalAmount } = req.body;
+
+    const customerId = req.user.id; // Assuming the user is authenticated
+
+    const user = await User.findById(customerId); // Fetch the user's details
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
     }
-    
-    const { 
-      restaurantId, 
-      items, 
-      customerInfo,
-      customerLocation,
-      totalAmount,
-      status 
-    } = req.body;
-
-    const customerId = req.user.id;
-
-    if (!restaurantId || !items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Missing required fields: restaurantId and items array' 
-      });
-    }
-
-    for (const item of items) {
-      if (!item.itemId || !item.quantity || !item.price) {
-        return res.status(400).json({
-          success: false,
-          message: 'Each item must have itemId, quantity, and price'
-        });
-      }
-    }
-
-    let calculatedTotal = totalAmount;
-    if (!calculatedTotal) {
-      calculatedTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    }
-
-    if (status && status !== 'DRAFT' && status !== 'CONFIRMED') {
-      return res.status(400).json({
-        success: false,
-        message: 'Initial order status can only be DRAFT or CONFIRMED'
-      });
-    }
-
-    const orderStatus = status === 'CONFIRMED' ? 'CONFIRMED' : 'DRAFT';
 
     const newOrder = new Order({
       customerId,
       restaurantId,
       items,
-      totalAmount: calculatedTotal,
-      status: orderStatus,
-      customerInfo: customerInfo || {},
+      totalAmount,
+      customerInfo: {
+        name: user.name, // Use the real user's name
+        email: user.email,
+        contactNumber: customerInfo.contactNumber,
+      },
       customerLocation,
-      paymentStatus: 'PENDING'
+      status: "DRAFT",
+      paymentStatus: "PENDING",
     });
 
     const savedOrder = await newOrder.save();
-
     return res.status(201).json({
       success: true,
-      message: 'Order placed successfully',
-      data: savedOrder
+      message: "Order placed successfully",
+      data: savedOrder,
     });
-
   } catch (error) {
-    console.error('Error placing order:', error);
+    console.error("Error placing order:", error);
     return res.status(500).json({
       success: false,
-      message: 'An error occurred while placing the order',
-      error: error.message
+      message: "Failed to place order",
+      error: error.message,
     });
   }
 };
@@ -178,34 +143,55 @@ export const modifyOrder = async (req, res) => {
   }
 };
 
-
-
-// 🚀 3. Confirm an order
 export const confirmOrder = async (req, res) => {
   try {
     const order = req.order;
 
     if (order.status !== "DRAFT") {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Only DRAFT orders can be confirmed" 
+        message: "Only DRAFT orders can be confirmed",
+      });
+    }
+
+    const totalAmount = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    const paymentResult = await processPayment(order._id, totalAmount);
+
+    if (!paymentResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: "Payment failed",
+        error: paymentResult.message,
       });
     }
 
     order.status = "CONFIRMED";
+    order.paymentStatus = "PAID";
     const updatedOrder = await order.save();
+
+    // Notify customer with email and PDF
+    await axios.post("http://localhost:5001/api/notifications/send", {
+      to: order.customerInfo.email,
+      subject: "Order Confirmation",
+      message: `Dear ${order.customerInfo.name}, your order #${order._id} has been confirmed.`,
+      order: {
+        ...updatedOrder.toObject(),
+        restaurantName, // Add the restaurant name to the order object
+      },
+    });
 
     return res.status(200).json({
       success: true,
       message: "Order confirmed successfully",
-      data: updatedOrder
+      data: updatedOrder,
     });
   } catch (error) {
     console.error("Error confirming order:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
       message: "Failed to confirm order",
-      error: error.message 
+      error: error.message,
     });
   }
 };
@@ -286,6 +272,8 @@ export const updatePlacedOrder = async (req, res) => {
       validNextStatus = 'PREPARING';
     } else if (order.status === 'PREPARING') {
       validNextStatus = 'READY_FOR_DELIVERY';
+    } else if (order.status === 'READY_FOR_DELIVERY') {
+      validNextStatus = 'SHIPPED';
     }
 
     if (status !== validNextStatus) {
