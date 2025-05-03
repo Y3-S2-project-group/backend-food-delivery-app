@@ -272,6 +272,8 @@ export const updatePlacedOrder = async (req, res) => {
       validNextStatus = 'PREPARING';
     } else if (order.status === 'PREPARING') {
       validNextStatus = 'READY_FOR_DELIVERY';
+    } else if (order.status === 'READY_FOR_DELIVERY') {
+      validNextStatus = 'SHIPPED';
     }
 
     if (status !== validNextStatus) {
