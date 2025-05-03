@@ -20,7 +20,7 @@ router.post('/', authenticateToken, checkRole('restaurant'), createRestaurant);
 // Only admin can view all pending restaurant approvals
 router.get('/pending', authenticateToken, checkRole('admin'), getPendingRestaurants);
 
-// ✅ Anyone authenticated (maybe customer or restaurant) can view approved restaurants
+// Anyone authenticated (maybe customer or restaurant) can view approved restaurants
 router.get('/approved', getApprovedRestaurants);
 
 // Only the logged-in restaurant manager can view their own restaurants

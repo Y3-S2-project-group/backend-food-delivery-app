@@ -15,9 +15,16 @@ app.use(express.json());
 
 // CORS setup for local development (frontend running on Vite - localhost:5173)
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin || origin.startsWith('http://localhost:')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
+
 
 // Routes
 app.use('/api/restaurants', restaurantRoutes);
