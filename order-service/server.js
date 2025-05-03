@@ -5,19 +5,22 @@ import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import orderRoutes from './routes/orderRoutes.js';
 
-dotenv.config();
+dotenv.config();//connect to mongodb
 
 //express app
 const app = express();
+
 
 //routes
 app.get('/', (req, res) => {
     res.send('Server is ready Ashan');
 });
 
+
+
+
 // Middleware
 app.use(cors());
-
 app.use(express.json()); // Parses incoming JSON requests
 app.use(express.urlencoded({ extended: true })); // Parses URL-encoded data
 app.use(bodyParser.json()); // Parses JSON payloads

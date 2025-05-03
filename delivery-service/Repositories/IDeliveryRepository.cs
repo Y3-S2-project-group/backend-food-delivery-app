@@ -9,6 +9,5 @@ namespace delivery_service.Repositories
         Task<Delivery?> GetByIdAsync(string id);
         Task<Delivery?> GetByOrderIdAsync(string orderId);
         Task<Delivery> UpdateAsync(Delivery delivery);
-        Task<List<Delivery>> GetDeliveriesByDriverIdAsync(string driverId);
     }
 }
