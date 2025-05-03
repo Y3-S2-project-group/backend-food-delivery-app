@@ -1053,9 +1053,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Aravinda\\Documents\\Y3S2\\DS\\Assignment 1\\Project\\backend-food-delivery-app\\delivery-service\\..csproj",
-      "projectName": ".",
-      "projectPath": "C:\\Users\\Aravinda\\Documents\\Y3S2\\DS\\Assignment 1\\Project\\backend-food-delivery-app\\delivery-service\\..csproj",
+      "projectUniqueName": "C:\\Users\\Aravinda\\Documents\\Y3S2\\DS\\Assignment 1\\Project\\backend-food-delivery-app\\delivery-service\\DeliveryService.csproj",
+      "projectName": "DeliveryService",
+      "projectPath": "C:\\Users\\Aravinda\\Documents\\Y3S2\\DS\\Assignment 1\\Project\\backend-food-delivery-app\\delivery-service\\DeliveryService.csproj",
       "packagesPath": "C:\\Users\\Aravinda\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\Aravinda\\Documents\\Y3S2\\DS\\Assignment 1\\Project\\backend-food-delivery-app\\delivery-service\\obj\\",
       "projectStyle": "PackageReference",
