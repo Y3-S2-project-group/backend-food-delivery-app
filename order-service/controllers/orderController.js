@@ -512,26 +512,18 @@ export const getOrderDetails = async (req, res) => {
 };
 
 
+
 export const getConfirmedOrders = async (req, res) => {
   try {
-    const restaurantId = req.params.restaurantId || req.query.restaurantId;
-
-    if (!restaurantId) {
-      return res.status(400).json({
-        success: false,
-        message: "Restaurant ID is required"
-      });
-    }
-
-    // Find confirmed orders for the specified restaurant
+    // Find all orders with CONFIRMED status
     const confirmedOrders = await Order.find({ 
-      restaurantId: restaurantId
+      status: 'CONFIRMED' 
     }).sort({ createdAt: -1 }); // Most recent first
     
     if (confirmedOrders.length === 0) {
       return res.status(200).json({
         success: true,
-        message: "No confirmed orders found for this restaurant",
+        message: "No confirmed orders found",
         data: []
       });
     }
