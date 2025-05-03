@@ -14,31 +14,40 @@ import {
 
 } from "../controllers/orderController.js";
 import { authenticateToken, authorizeRole, isOrderOwner } from "../middleware/authMiddleware.js";
+import { processPayment } from "../../payment-service/utils/paymentUtils.js";
 
 
 // Create router instance
 const router = express.Router();
 
 // Customer-only routes
-router.post("/orders", 
-  authenticateToken, 
-  authorizeRole(['customer']), 
-  placeOrder
-);
+router.post("/orders", placeOrder);
 
-router.put("/orders/:id", 
-  authenticateToken, 
-  authorizeRole(['customer']), 
-  isOrderOwner, 
-  modifyOrder
-);
+router.put("/orders/:id", modifyOrder);
 
-router.patch("/orders/:id/confirm", 
-  authenticateToken, 
-  authorizeRole(['customer']), 
-  isOrderOwner, 
-  confirmOrder
-);
+router.patch("/orders/:id/confirm", confirmOrder);
+
+// // Customer-only routes
+// router.post("/orders", 
+//   authenticateToken, 
+//   authorizeRole(['customer']), 
+//   placeOrder
+// );
+
+// router.put("/orders/:id", 
+//   authenticateToken, 
+//   authorizeRole(['customer']), 
+//   isOrderOwner, 
+//   modifyOrder
+// );
+
+// router.patch("/orders/:id/confirm", 
+//   authenticateToken, 
+//   authorizeRole(['customer']), 
+//   isOrderOwner,
+//   processPayment,
+//   confirmOrder
+// );
 
 // Both customer and restaurant can check order status
 router.get("/orders/:id/status", 

@@ -1,12 +1,15 @@
-const express = require('express');
+import express from 'express';
+import Stripe from 'stripe';
+import dotenv from 'dotenv';
+dotenv.config();
+
 const router = express.Router();
-const Stripe = require('stripe');
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is missing in environment variables');
 }
 
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2022-11-15' });
 
 // POST /api/payments
 router.post('/', async (req, res) => {
@@ -38,4 +41,4 @@ router.post('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
