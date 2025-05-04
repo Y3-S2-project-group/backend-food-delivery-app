@@ -19,31 +19,40 @@ namespace delivery_service.Controllers
         [HttpPost("assign")]
         public async Task<IActionResult> AssignDelivery([FromBody] OrderReadyDTO orderReady)
         {
-            if (orderReady == null || string.IsNullOrEmpty(orderReady.OrderId))
+            try
             {
-                return BadRequest("Invalid order information");
+                if (orderReady == null || string.IsNullOrEmpty(orderReady.OrderId))
+                {
+                    return BadRequest("Invalid order information");
+                }
+
+                var delivery = await _deliveryService.AssignDeliveryAsync(orderReady);
+
+                if (delivery == null)
+                {
+                    return StatusCode(503, new { message = "No available drivers found" });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Delivery assigned successfully",
+                    data = delivery
+                });
             }
-
-            var delivery = await _deliveryService.AssignDeliveryAsync(orderReady);
-
-            if (delivery == null)
+            catch (Exception ex)
             {
-                return StatusCode(503, new { message = "No available drivers found" });
+                // Log the exception
+                Console.WriteLine($"Error assigning delivery: {ex.Message}\n{ex.StackTrace}");
+                return StatusCode(500, new { message = "An error occurred while assigning delivery", error = ex.Message });
             }
-
-            return Ok(new
-            {
-                success = true,
-                message = "Delivery assigned successfully",
-                data = delivery
-            });
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetDelivery(string id)
         {
             var delivery = await _deliveryService.GetDeliveryByIdAsync(id);
-            
+
             if (delivery == null)
             {
                 return NotFound(new { message = "Delivery not found" });
@@ -56,7 +65,7 @@ namespace delivery_service.Controllers
         public async Task<IActionResult> GetDeliveryByOrderId(string orderId)
         {
             var delivery = await _deliveryService.GetDeliveryByOrderIdAsync(orderId);
-            
+
             if (delivery == null)
             {
                 return NotFound(new { message = "Delivery not found for the order" });
@@ -93,7 +102,7 @@ namespace delivery_service.Controllers
             }
 
             var deliveries = await _deliveryService.GetDeliveriesByDriverIdAsync(driverId);
-            
+
             return Ok(new { success = true, data = deliveries });
         }
     }

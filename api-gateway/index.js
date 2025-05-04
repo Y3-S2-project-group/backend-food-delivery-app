@@ -66,10 +66,22 @@ apiGateway.use(['/api/restaurants', '/api/menus'], (req, res) => {
 
 
 // ORDER service
-apiGateway.use('/api/order', (req, res) => {
-    consoleLog(`Request sent to ORDER service`, colors.yellow);
-    proxy.web(req, res, { target: process.env.ORDER_SERVICE });
-});
+apiGateway.use(['/api/orders', '/api/confirmed-orders'], (req, res) => {
+    const originalUrl = req.originalUrl; // This gives you the full URL path
+    const targetPath = originalUrl; // Define targetPath
+    const targetUrl = process.env.ORDER_SERVICE;
+    
+    consoleLog(`Request sent to ORDER service at ${targetUrl}`, colors.cyan);
+    console.log('Forwarding to:', targetUrl + targetPath);
+    req.url = targetPath; // Now targetPath is defined
+    proxy.web(req, res, { target: targetUrl });
+  });
+
+// // ORDER service
+// apiGateway.use('/api/order', (req, res) => {
+//     consoleLog(`Request sent to ORDER service`, colors.yellow);
+//     proxy.web(req, res, { target: process.env.ORDER_SERVICE });
+// });
 
 // PAYMENT service
 apiGateway.use('/api/payment', (req, res) => {

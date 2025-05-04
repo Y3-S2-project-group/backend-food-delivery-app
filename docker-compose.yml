@@ -83,7 +83,7 @@ services:
       - "5002:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ServiceUrls__AuthService=http://auth-service:8000
+      - ServiceUrls__AuthService=http://auth-service:8001
       - ServiceUrls__RestaurantService=http://restaurant-service:5000
       - ServiceUrls__OrderService=http://order-service:5001
       - DatabaseSettings__ConnectionString=${DELIVERY_MONGO_URI}
