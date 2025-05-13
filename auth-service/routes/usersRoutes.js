@@ -1,5 +1,5 @@
 import express from 'express';
-import { deleteUser, getAllUsers, getUserById, updateUser, createDriverLocation, findDriversWithin5km, updateDriverAvailability, getDriverById } from '../controllers/userController.js';
+import { deleteUser, getAllUsers, getUserById, updateUser, createDriverLocation, findDriversWithin5km, updateDriverAvailability } from '../controllers/userController.js';
 
 const router = express.Router();
 
@@ -13,6 +13,6 @@ router.post('/drivers/location', createDriverLocation);
 // router.get('/drivers/available', getAvailableDrivers);
 router.get('/drivers/nearest', findDriversWithin5km);
 router.put('/drivers/:driverId/availability', updateDriverAvailability);
-router.get('/drivers/:driverId', getDriverById);
+  
 
 export default router;

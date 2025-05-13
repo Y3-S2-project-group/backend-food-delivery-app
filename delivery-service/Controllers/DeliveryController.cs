@@ -83,19 +83,6 @@ namespace delivery_service.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
-
-        [HttpGet("drivers/{driverId}")]
-        public async Task<IActionResult> GetDeliveriesByDriverId(string driverId)
-        {
-            if (string.IsNullOrEmpty(driverId))
-            {
-                return BadRequest("Driver ID is required");
-            }
-
-            var deliveries = await _deliveryService.GetDeliveriesByDriverIdAsync(driverId);
-            
-            return Ok(new { success = true, data = deliveries });
-        }
     }
 
     public class UpdateStatusDTO

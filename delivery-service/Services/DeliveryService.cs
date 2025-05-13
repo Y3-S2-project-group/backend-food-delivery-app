@@ -139,10 +139,5 @@ namespace delivery_service.Services
             delivery.Status = status;
             return await _deliveryRepository.UpdateAsync(delivery);
         }
-
-        public async Task<List<Delivery>> GetDeliveriesByDriverIdAsync(string driverId)
-        {
-            return await _deliveryRepository.GetDeliveriesByDriverIdAsync(driverId);
-        }
     }
 }

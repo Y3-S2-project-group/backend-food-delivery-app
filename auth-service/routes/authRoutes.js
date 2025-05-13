@@ -2,7 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 
 import transporter from '../utils/email.js';
-import { forgotPassword, login, register, resetPassword, verifyOtp, registerRestaurantManager, registerDeliveryPerson } from '../controllers/authController.js';
+import { forgotPassword, login, register, resetPassword, verifyOtp } from '../controllers/authController.js';
 
 dotenv.config();
 
@@ -13,8 +13,6 @@ router.post('/login', login)
 router.post('/forgot-password', forgotPassword);
 router.post('/verify-otp', verifyOtp);
 router.post('/reset-password', resetPassword);
-router.post('/register-restaurant-manager', registerRestaurantManager);
-router.post('/register-delivery-person', registerDeliveryPerson);
 
   
 

@@ -225,57 +225,6 @@ export const updateDriverAvailability = async (req, res) => {
   }
 };
 
-export const getDriverById = async (req, res) => {
-  try {
-    const { driverId } = req.params;
-    
-    // Get user data
-    const driver = await User.findById(driverId).select('-password');
-    
-    if (!driver) {
-      return res.status(404).json({
-        success: false,
-        message: 'Driver not found'
-      });
-    }
-    
-    // Verify the user is a driver
-    if (driver.role !== 'delivery-person') {
-      return res.status(400).json({
-        success: false,
-        message: 'User is not a driver'
-      });
-    }
-    
-    // Get driver location information
-    const driverLocation = await DriverLocation.findOne({ userId: driverId });
-    
-    // Combine data
-    const result = {
-      id: driver._id,
-      name: driver.name,
-      email: driver.email,
-      contactNumber: driver.contactNumber || '',
-      role: driver.role,
-      location: driverLocation ? driverLocation.location.coordinates : null,
-      isAvailable: driverLocation ? driverLocation.isAvailable : false,
-      lastUpdated: driverLocation ? driverLocation.lastUpdated : null
-    };
-    
-    res.json({
-      success: true,
-      data: result
-    });
-  } catch (err) {
-    console.error('Error fetching driver by ID:', err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error',
-      error: err.message
-    });
-  }
-};
-
 // Get all available drivers
 // export const getAvailableDrivers = async (req, res) => {
 //   try {
